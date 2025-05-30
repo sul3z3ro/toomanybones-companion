@@ -1,0 +1,5 @@
+Description: "**เนื้อเรื่อง:** _เอียง_ [icon:train] [icon:progress]"
+Choice1 Header: "**สู้ต่อ**"
+Choice1 Description: "จะได้ [icon:loot] หรือ [icon:progress1] _เทิร์นเดียว_"
+Choice1 Reward: "[icon:train] +1 Training Point"
+Complete Reward: "[icon:progress1], [icon:train]"

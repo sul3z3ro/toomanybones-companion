@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
     const sheets = google.sheets({ version: 'v4', auth });
     const sheetId = process.env.GOOGLE_SHEET_ID as string;
-    const range = 'Sheet1!A:A'; // <<-- เปลี่ยนตรงนี้!
+    const range = 'Sheet1!A:A';
 
     const result = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
