@@ -1,0 +1,9 @@
+- id: "01"
+  name: "Fortunate Discovery"
+  type: "Loot"
+  number of uses: "1"
+  Description: |
+    เลือกลูกเต๋า consumable ของคุณและวางมันลงไปในช่องสกิลบนแผ่นเกียร์ลอค คุณสามารถนำไปใช้ได้ตามปกติ
+  Flavor: |
+    *"มาสร้างมันกันเถอะ"*
+    *- Tink*
