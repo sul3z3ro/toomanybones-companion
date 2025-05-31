@@ -1,4 +1,3 @@
-// pages/tmb.tsx
 import { useEffect, useState, Fragment, MouseEvent } from 'react';
 import yaml from 'js-yaml';
 import { useRouter } from 'next/router';
@@ -8,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw'; // <--- สำคัญ!
+import rehypeRaw from 'rehype-raw';
 import React from 'react';
 
 // ===== 1. PREPROCESS ICON TAG =====
@@ -21,15 +20,21 @@ function preprocessWithIcons(text: string) {
   return text;
 }
 
-
 // ===== 2. PREPROCESS COLOR TAG ([green]...[/green]) ให้เป็น HTML =====
 const colorMap: Record<string, string> = {
   red: '#d32f2f',
   green: '#26a641',
   blue: '#1976d2',
   yellow: '#fbc02d',
-  // เพิ่มสีอื่นๆ ได้
 };
+
+function replaceColorTags(text: string): string {
+  if (!text) return "";
+  return text.replace(/\[([a-zA-Z]+)\]([\s\S]*?)\[\/\1\]/g, (_m, color, content) => {
+    const cssColor = colorMap[color.toLowerCase()] || color;
+    return `<span style="color:${cssColor}">${content}</span>`;
+  });
+}
 
 // ===== 3. PREPROCESS NOBREAK TAG ([nb]...[/nb]) ให้เป็น HTML =====
 function replaceNoBreakTags(text: string): string {
@@ -39,24 +44,13 @@ function replaceNoBreakTags(text: string): string {
   });
 }
 
-
 // ===== 4. รวมทุก preprocess =====
 function preprocessAll(text: string): string {
-  // อย่าลืมเปลี่ยนลำดับตามความเหมาะสม ถ้า tag ซ้อนกัน
   return replaceNoBreakTags(
     replaceColorTags(
       preprocessWithIcons(text)
     )
   );
-}
-
-function replaceColorTags(text: string): string {
-  if (!text) return "";
-  // [green]foo[/green] → <span style="color:#26a641;font-style:italic">foo</span>
-  return text.replace(/\[([a-zA-Z]+)\]([\s\S]*?)\[\/\1\]/g, (_m, color, content) => {
-    const cssColor = colorMap[color.toLowerCase()] || color;
-    return `<span style="color:${cssColor}">${content}</span>`;
-  });
 }
 
 type MenuGroup = {
@@ -79,35 +73,30 @@ function getString(val: unknown): string {
 function safeImage(src?: string | Blob, alt?: string) {
   if (typeof src !== "string" || src.trim() === "") return null;
   const imgSrc = src.startsWith('/') ? src : '/' + src;
-
-let w = 25, h = 25;
-let verticalAlign = 'middle'; // หรือ baseline เป็นค่า default
-
-if (imgSrc.includes('-tx.png')) {
-  w = 15;
-  h = 15;
-  verticalAlign = '-2px'; // หรือจะเป็น 'middle', 'text-bottom', ฯลฯ
+  let w = 30, h = 30;
+  let verticalAlign = 'middle';
+  if (imgSrc.includes('-tx.png')) {
+    w = 20;
+    h = 20;
+    verticalAlign = '-3px';
+  }
+  return (
+    <Image
+      src={imgSrc as string}
+      alt={alt || ""}
+      width={w}
+      height={h}
+      style={{
+        display: 'inline-block',
+        width: w,
+        height: h,
+        margin: '0 2px',
+        verticalAlign: verticalAlign,
+      }}
+      unoptimized
+    />
+  );
 }
-
-// ...
-return (
-  <Image
-    src={imgSrc as string}
-    alt={alt || ""}
-    width={w}
-    height={h}
-    style={{
-      display: 'inline-block',
-      width: w,
-      height: h,
-      margin: '0 2px',
-      verticalAlign: verticalAlign,
-    }}
-    unoptimized
-  />
-);
-}
-
 
 export default function TMB() {
   const [data, setData] = useState<Record<string, unknown>[]>([]);
@@ -302,118 +291,37 @@ export default function TMB() {
           </motion.div>
         </AnimatePresence>
 
-{/* ----------- MODAL ----------- */}
-<AnimatePresence>
-  {selected && (
-    <motion.div
-      key="modal-bg"
-      className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.22 }}
-      onClick={handleModalOverlayClick}
-      style={{ cursor: "pointer" }}
-    >
-      <motion.div
-        key="modal-content"
-        initial={{ opacity: 0, scale: 0.92, y: 40 }}
-        animate={{ opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 340, damping: 24 } }}
-        exit={{ opacity: 0, scale: 0.97, x: 240, transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] } }}
-        className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 pb-10 relative"
-        style={{ cursor: "auto" }}
-        onClick={e => e.stopPropagation()}
-      >
-        <button
-          className="absolute top-2 right-3 text-black text-xl"
-          onClick={() => setSelected(null)}
-        >×</button>
-
-        {/* Title */}
-        <div className="text-lg font-bold mb-2">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
-            skipHtml={false}
-            components={{
-              strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
-              em: ({children}) => <em className="italic text-gray-600">{children}</em>,
-              img: ({src, alt}) => safeImage(src, alt),
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
-            }}
-          >
-            {preprocessAll(getString(selected.name) || getString(selected.id))}
-          </ReactMarkdown>
-        </div>
-
-        {/* Description */}
-        {typeof selected.Description === 'string' && (
-          <div className="mb-4 text-black whitespace-pre-line">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-              skipHtml={false}
-              components={{
-                strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
-                em: ({children}) => <em className="italic text-gray-600">{children}</em>,
-                img: ({src, alt}) => safeImage(src, alt),
-                a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
-                ul: ({children}) => <ul className="list-disc pl-5 my-1">{children}</ul>,
-                li: ({children}) => <li className="mb-0.5">{children}</li>,
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
-              }}
+        {/* ----------- MODAL ----------- */}
+        <AnimatePresence>
+          {selected && (
+            <motion.div
+              key="modal-bg"
+              className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={handleModalOverlayClick}
+              style={{ cursor: "pointer" }}
             >
-              {preprocessAll(getString(selected.Description))}
+              <motion.div
+                key="modal-content"
+                initial={{ opacity: 0, scale: 0.92, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 340, damping: 24 } }}
+                exit={{ opacity: 0, scale: 0.97, x: 240, transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] } }}
+                className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 pb-10 relative"
+                style={{ maxHeight: '80vh', cursor: "auto" }}
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  className="absolute top-2 right-3 text-black text-xl"
+                  onClick={() => setSelected(null)}
+                >×</button>
 
-            </ReactMarkdown>
-          </div>
-        )}
-
-        {/* Encounter Choices */}
-        {validChoices.length > 0 && (
-          <>
-            <hr className="mb-3 border-t border-gray-400" />
-            {validChoices.map((n, idx) => (
-              <Fragment key={n}>
-                {idx > 0 && (
-                  <hr className="my-3 border-t border-gray-400" />
-                )}
-                <div className="mb-2 whitespace-pre-line">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
-                        skipHtml={false}
-                        components={{
-                          strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
-                          em: ({children}) => <em className="italic text-gray-600">{children}</em>,
-                          img: ({src, alt}) => safeImage(src, alt),
-                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                          span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>
-                        }}
-                      >
-                        {preprocessAll(getString(selected[`Choice${n} Header`]))}
-                      </ReactMarkdown>
-                    </span>
-                    {getString(selected[`Choice${n} Reward`]) && (
-                      <span className="ml-2 text-xs font-semibold flex items-center">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeRaw]}
-                          skipHtml={false}
-                          components={{
-                            img: ({src, alt}) => safeImage(src, alt)
-                          }}
-                        >
-                          {preprocessAll(getString(selected[`Choice${n} Reward`]))}
-                        </ReactMarkdown>
-                      </span>
-                    )}
-                  </div>
-                  <div className="whitespace-pre-line text-sm">
+                {/* ------- scrollable modal content ------ */}
+                <div className="overflow-y-auto pr-1" style={{ maxHeight: 'calc(80vh - 64px)' }}>
+                  {/* Title */}
+                  <div className="text-lg font-bold mb-2">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
@@ -422,167 +330,247 @@ export default function TMB() {
                         strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
                         em: ({children}) => <em className="italic text-gray-600">{children}</em>,
                         img: ({src, alt}) => safeImage(src, alt),
-                        a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
-                        ul: ({children}) => <ul className="list-disc pl-5 my-1">{children}</ul>,
-                        li: ({children}) => <li className="mb-0.5">{children}</li>,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                        span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                        ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                        li: ({children}) => <li className="mb-0">{children}</li>,
                       }}
                     >
-                      {preprocessAll(getString(selected[`Choice${n} Description`]) || '')}
+                      {preprocessAll(getString(selected.name) || getString(selected.id))}
                     </ReactMarkdown>
                   </div>
-                </div>
-              </Fragment>
-            ))}
-            <hr className="mt-3 mb-2 border-t border-gray-400" />
-          </>
-        )}
-
-        {/* Tyrant Special Fields */}
-        {typeof selected["Required Monster"] === 'string' && (
-          <div className="mb-2">
-            <span className="font-bold">ประเภทของวายร้ายที่ใช้: </span>
-            <span className="whitespace-pre-line">{getString(selected["Required Monster"])}</span>
-          </div>
-        )}
-        {typeof selected.Time === 'string' && (
-          <div className="mb-8">
-            <span className="font-bold">ระยะเวลาที่ใช้: </span>
-            <span className="whitespace-pre-line">{getString(selected.Time)}</span>
-          </div>
-        )}
-        {typeof selected.Instruction === 'string' && (
-          <div className="mb-4 text-black whitespace-pre-line">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-              skipHtml={false}
-              components={{
-                strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
-                em: ({children}) => <em className="italic text-gray-600">{children}</em>,
-                img: ({src, alt}) => safeImage(src, alt),
-                a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
-                ul: ({children}) => <ul className="list-disc pl-5 my-1">{children}</ul>,
-                li: ({children}) => <li className="mb-0.5">{children}</li>,
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
-              }}
-            >
-              {preprocessAll(getString(selected.Instruction))}
-            </ReactMarkdown>
-          </div>
-        )}
-        {typeof selected.Skill === 'string' && (
-          <div className="mb-4 text-black whitespace-pre-line">
-            <h1 className="font-bold">Skill:</h1>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-              skipHtml={false}
-              components={{
-                img: ({src, alt}) => safeImage(src, alt)
-              }}
-            >
-              {preprocessAll(getString(selected.Skill))}
-            </ReactMarkdown>
-          </div>
-        )}
-        {typeof selected.Die === 'string' && (
-          <div className="mb-4 text-black whitespace-pre-line">
-            <h1 className="font-bold">Tyrant&apos;s Die:</h1>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-              skipHtml={false}
-              components={{
-                img: ({src, alt}) => safeImage(src, alt)
-              }}
-            >
-              {preprocessAll(getString(selected.Die))}
-            </ReactMarkdown>
-          </div>
-        )}
-        {typeof selected.Flavor === 'string' && (
-          <div className="text-gray-700 whitespace-pre-line">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-              skipHtml={false}
-              components={{
-                em: ({children}) => <em className="italic text-gray-600">{children}</em>,
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
-              }}
-            >
-              {preprocessAll(getString(selected.Flavor))}
-            </ReactMarkdown>
-          </div>
-        )}
-
-        {/* Complete Reward */}
-        {typeof selected["Complete Reward"] === "string" && selected["Complete Reward"] && (() => {
-          const { left, right } = splitCompleteReward(getString(selected["Complete Reward"]));
-          return (
-            <>
-              {left.length > 0 && (
-                <div className="absolute left-4 bottom-4 flex gap-2">
-                  {left.map((item, idx) => (
-                    <span key={idx} className="flex items-center">
+                  {/* Description */}
+                  {typeof selected.Description === 'string' && (
+                    <div className="mb-4 text-black whitespace-pre-line">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeRaw]}
                         skipHtml={false}
                         components={{
+                          strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                          em: ({children}) => <em className="italic text-gray-600">{children}</em>,
                           img: ({src, alt}) => safeImage(src, alt),
-                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                          span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>
+                          a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
+                          ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                          li: ({children}) => <li className="mb-0">{children}</li>,
+                          span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
                         }}
                       >
-                        {preprocessAll(item.trim())}
+                        {preprocessAll(getString(selected.Description))}
                       </ReactMarkdown>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {right.length > 0 && (
-                <div className="absolute right-4 bottom-4 flex gap-2">
-                  {right.map((item, idx) => (
-                    <span key={idx} className="flex items-center">
+                    </div>
+                  )}
+                  {/* Encounter Choices */}
+                  {validChoices.length > 0 && (
+                    <>
+                      <hr className="mb-3 border-t border-gray-400" />
+                      {validChoices.map((n, idx) => (
+                        <Fragment key={n}>
+                          {idx > 0 && (
+                            <hr className="my-3 border-t border-gray-400" />
+                          )}
+                          <div className="mb-2 whitespace-pre-line">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold">
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  rehypePlugins={[rehypeRaw]}
+                                  skipHtml={false}
+                                  components={{
+                                    strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                                    em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                                    img: ({src, alt}) => safeImage(src, alt),
+                                    span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                                    ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                                    li: ({children}) => <li className="mb-0">{children}</li>,
+                                  }}
+                                >
+                                  {preprocessAll(getString(selected[`Choice${n} Header`]))}
+                                </ReactMarkdown>
+                              </span>
+                              {getString(selected[`Choice${n} Reward`]) && (
+                                <span className="ml-2 text-xs font-semibold flex items-center">
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    rehypePlugins={[rehypeRaw]}
+                                    skipHtml={false}
+                                    components={{
+                                      img: ({src, alt}) => safeImage(src, alt)
+                                    }}
+                                  >
+                                    {preprocessAll(getString(selected[`Choice${n} Reward`]))}
+                                  </ReactMarkdown>
+                                </span>
+                              )}
+                            </div>
+                            <div className="whitespace-pre-line text-sm">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]}
+                                skipHtml={false}
+                                components={{
+                                  strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                                  em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                                  img: ({src, alt}) => safeImage(src, alt),
+                                  a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
+                                  ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                                  li: ({children}) => <li className="mb-0">{children}</li>,
+                                  span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                                }}
+                              >
+                                {preprocessAll(getString(selected[`Choice${n} Description`]) || '')}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        </Fragment>
+                      ))}
+                      <hr className="mt-3 mb-2 border-t border-gray-400" />
+                    </>
+                  )}
+                  {/* Tyrant Special Fields */}
+                    {typeof selected["Required Monster"] === 'string' && (
+                      <div className="mb-2">
+                        <span className="font-bold">ประเภทของวายร้ายที่ใช้: </span>
+                        <span className="whitespace-pre-line">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            skipHtml={false}
+                            components={{
+                              img: ({src, alt}) => safeImage(src, alt),
+                              span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                            }}
+                          >
+                            {preprocessAll(getString(selected["Required Monster"]))}
+                          </ReactMarkdown>
+                        </span>
+                      </div>
+                    )}
+                    {typeof selected.Time === 'string' && (
+                      <div className="mb-8">
+                        <span className="font-bold">ระยะเวลาที่ใช้: </span>
+                        <span className="whitespace-pre-line">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            skipHtml={false}
+                            components={{
+                              img: ({src, alt}) => safeImage(src, alt),
+                              span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                            }}
+                          >
+                            {preprocessAll(getString(selected.Time))}
+                          </ReactMarkdown>
+                        </span>
+                      </div>
+                    )}
+                  {typeof selected.Skill === 'string' && (
+                    <div className="mb-4 text-black whitespace-pre-line">
+                      <h1 className="font-bold">Skill:</h1>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeRaw]}
                         skipHtml={false}
                         components={{
-                          img: ({src, alt}) => safeImage(src, alt),
-                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                          span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>
+                          img: ({src, alt}) => safeImage(src, alt)
                         }}
                       >
-                        {preprocessAll(item.trim())}
+                        {preprocessAll(getString(selected.Skill))}
                       </ReactMarkdown>
-                    </span>
-                  ))}
+                    </div>
+                  )}
+                  {typeof selected.Die === 'string' && (
+                    <div className="mb-4 text-black whitespace-pre-line">
+                      <div className="font-bold mb-1">
+                        {safeImage("/images/tydie.png", "Tyrant's Die")}:
+                      </div>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        skipHtml={false}
+                        components={{
+                          img: ({src, alt}) => safeImage(src, alt)
+                        }}
+                      >
+                        {preprocessAll(getString(selected.Die))}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                  {typeof selected.Flavor === 'string' && (
+                    <div className="text-gray-700 whitespace-pre-line">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        skipHtml={false}
+                        components={{
+                          em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                          span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                        }}
+                      >
+                        {preprocessAll(getString(selected.Flavor))}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
-              )}
-            </>
-          );
-        })()}
+                {/* --- Absolute-reward + badge, always on bottom --- */}
+                {typeof selected["Complete Reward"] === "string" && selected["Complete Reward"] && (() => {
+                  const { left, right } = splitCompleteReward(getString(selected["Complete Reward"]));
+                  return (
+                    <>
+                      {left.length > 0 && (
+                        <div className="absolute left-4 bottom-4 flex gap-2">
+                          {left.map((item, idx) => (
+                            <span key={idx} className="flex items-center">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]}
+                                skipHtml={false}
+                                components={{
+                                  img: ({src, alt}) => safeImage(src, alt),
+                                  span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>
+                                }}
+                              >
+                                {preprocessAll(item.trim())}
+                              </ReactMarkdown>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {right.length > 0 && (
+                        <div className="absolute right-4 bottom-4 flex gap-2">
+                          {right.map((item, idx) => (
+                            <span key={idx} className="flex items-center">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]}
+                                skipHtml={false}
+                                components={{
+                                  img: ({src, alt}) => safeImage(src, alt),
+                                  span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>
+                                }}
+                              >
+                                {preprocessAll(item.trim())}
+                              </ReactMarkdown>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
-        {typeof selected["number of uses"] === "string" && selected["number of uses"] && (
-          <div
-            className="absolute bottom-4 right-6 px-3 py-1 rounded-full bg-yellow-300 text-gray-900 font-bold shadow-lg text-xs"
-            style={{ pointerEvents: "none" }}
-          >
-            ใช้ได้ {getString(selected["number of uses"])} ครั้ง
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
-{/* ----------- END MODAL ----------- */}
-
+                {typeof selected["number of uses"] === "string" && selected["number of uses"] && (
+                  <div
+                    className="absolute bottom-4 right-6 px-3 py-1 rounded-full bg-yellow-300 text-gray-900 font-bold shadow-lg text-xs"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    ใช้ได้ {getString(selected["number of uses"])} ครั้ง
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* ----------- END MODAL ----------- */}
       </main>
 
       {/* Bottom navigation (mobile only) */}
