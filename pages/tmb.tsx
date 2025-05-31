@@ -14,9 +14,13 @@ import React from 'react';
 // ===== 1. PREPROCESS ICON TAG =====
 function preprocessWithIcons(text: string) {
   if (!text) return "";
-  // [icon:xxx] → ![](/images/xxx.png)
-  return text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/images/$1.png)');
+  // icon-tx
+  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/images/$1-tx.png)');
+  // icon ปกติ
+  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/images/$1.png)');
+  return text;
 }
+
 
 // ===== 2. PREPROCESS COLOR TAG ([green]...[/green]) ให้เป็น HTML =====
 const colorMap: Record<string, string> = {
@@ -26,6 +30,25 @@ const colorMap: Record<string, string> = {
   yellow: '#fbc02d',
   // เพิ่มสีอื่นๆ ได้
 };
+
+// ===== 3. PREPROCESS NOBREAK TAG ([nb]...[/nb]) ให้เป็น HTML =====
+function replaceNoBreakTags(text: string): string {
+  if (!text) return "";
+  return text.replace(/<nb>([\s\S]*?)<\/nb>/g, (_m, content) => {
+    return `<span style="white-space:nowrap">${content}</span>`;
+  });
+}
+
+
+// ===== 4. รวมทุก preprocess =====
+function preprocessAll(text: string): string {
+  // อย่าลืมเปลี่ยนลำดับตามความเหมาะสม ถ้า tag ซ้อนกัน
+  return replaceNoBreakTags(
+    replaceColorTags(
+      preprocessWithIcons(text)
+    )
+  );
+}
 
 function replaceColorTags(text: string): string {
   if (!text) return "";
@@ -53,26 +76,38 @@ function getString(val: unknown): string {
 }
 
 // ===== Helper ปลอดภัยสำหรับ Next/Image ใน markdown =====
-function safeImage(src?: string | Blob, alt?: string, width = 22, height = 22) {
+function safeImage(src?: string | Blob, alt?: string) {
   if (typeof src !== "string" || src.trim() === "") return null;
   const imgSrc = src.startsWith('/') ? src : '/' + src;
-  return (
-    <Image
-      src={imgSrc as string}
-      alt={alt || ""}
-      width={width}
-      height={height}
-      style={{
-        display: 'inline-block',
-        width,
-        height,
-        margin: '0 2px',
-        verticalAlign: 'middle',
-      }}
-      unoptimized
-    />
-  );
+
+let w = 25, h = 25;
+let verticalAlign = 'middle'; // หรือ baseline เป็นค่า default
+
+if (imgSrc.includes('-tx.png')) {
+  w = 15;
+  h = 15;
+  verticalAlign = '-2px'; // หรือจะเป็น 'middle', 'text-bottom', ฯลฯ
 }
+
+// ...
+return (
+  <Image
+    src={imgSrc as string}
+    alt={alt || ""}
+    width={w}
+    height={h}
+    style={{
+      display: 'inline-block',
+      width: w,
+      height: h,
+      margin: '0 2px',
+      verticalAlign: verticalAlign,
+    }}
+    unoptimized
+  />
+);
+}
+
 
 export default function TMB() {
   const [data, setData] = useState<Record<string, unknown>[]>([]);
@@ -308,7 +343,7 @@ export default function TMB() {
               span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
             }}
           >
-            {replaceColorTags(preprocessWithIcons(getString(selected.name) || getString(selected.id)))}
+            {preprocessAll(getString(selected.name) || getString(selected.id))}
           </ReactMarkdown>
         </div>
 
@@ -330,7 +365,8 @@ export default function TMB() {
                 span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
               }}
             >
-              {replaceColorTags(preprocessWithIcons(getString(selected.Description)))}
+              {preprocessAll(getString(selected.Description))}
+
             </ReactMarkdown>
           </div>
         )}
@@ -359,7 +395,7 @@ export default function TMB() {
                           span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>
                         }}
                       >
-                        {replaceColorTags(preprocessWithIcons(getString(selected[`Choice${n} Header`])))}
+                        {preprocessAll(getString(selected[`Choice${n} Header`]))}
                       </ReactMarkdown>
                     </span>
                     {getString(selected[`Choice${n} Reward`]) && (
@@ -372,7 +408,7 @@ export default function TMB() {
                             img: ({src, alt}) => safeImage(src, alt)
                           }}
                         >
-                          {preprocessWithIcons(getString(selected[`Choice${n} Reward`]))}
+                          {preprocessAll(getString(selected[`Choice${n} Reward`]))}
                         </ReactMarkdown>
                       </span>
                     )}
@@ -393,13 +429,13 @@ export default function TMB() {
                         span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
                       }}
                     >
-                      {replaceColorTags(preprocessWithIcons(getString(selected[`Choice${n} Description`]) || ''))}
+                      {preprocessAll(getString(selected[`Choice${n} Description`]) || '')}
                     </ReactMarkdown>
                   </div>
                 </div>
               </Fragment>
             ))}
-            <hr className="mt-3 border-t border-gray-400" />
+            <hr className="mt-3 mb-2 border-t border-gray-400" />
           </>
         )}
 
@@ -433,7 +469,7 @@ export default function TMB() {
                 span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
               }}
             >
-              {replaceColorTags(preprocessWithIcons(getString(selected.Instruction)))}
+              {preprocessAll(getString(selected.Instruction))}
             </ReactMarkdown>
           </div>
         )}
@@ -448,7 +484,7 @@ export default function TMB() {
                 img: ({src, alt}) => safeImage(src, alt)
               }}
             >
-              {preprocessWithIcons(getString(selected.Skill))}
+              {preprocessAll(getString(selected.Skill))}
             </ReactMarkdown>
           </div>
         )}
@@ -463,7 +499,7 @@ export default function TMB() {
                 img: ({src, alt}) => safeImage(src, alt)
               }}
             >
-              {preprocessWithIcons(getString(selected.Die))}
+              {preprocessAll(getString(selected.Die))}
             </ReactMarkdown>
           </div>
         )}
@@ -479,7 +515,7 @@ export default function TMB() {
                 span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
               }}
             >
-              {replaceColorTags(preprocessWithIcons(getString(selected.Flavor)))}
+              {preprocessAll(getString(selected.Flavor))}
             </ReactMarkdown>
           </div>
         )}
@@ -490,7 +526,7 @@ export default function TMB() {
           return (
             <>
               {left.length > 0 && (
-                <div className="absolute left-4 bottom-4 flex gap-2 ">
+                <div className="absolute left-4 bottom-4 flex gap-2">
                   {left.map((item, idx) => (
                     <span key={idx} className="flex items-center">
                       <ReactMarkdown
@@ -503,7 +539,7 @@ export default function TMB() {
                           span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>
                         }}
                       >
-                        {replaceColorTags(preprocessWithIcons(item.trim()))}
+                        {preprocessAll(item.trim())}
                       </ReactMarkdown>
                     </span>
                   ))}
@@ -523,7 +559,7 @@ export default function TMB() {
                           span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>
                         }}
                       >
-                        {replaceColorTags(preprocessWithIcons(item.trim()))}
+                        {preprocessAll(item.trim())}
                       </ReactMarkdown>
                     </span>
                   ))}
