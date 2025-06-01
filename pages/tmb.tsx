@@ -79,6 +79,10 @@ function safeImage(src?: string | Blob, alt?: string) {
     w = 20;
     h = 20;
     verticalAlign = '-3px';
+  } else if (imgSrc.includes('-ty.png')) {
+    w = 40;
+    h = 40;
+    verticalAlign = '0px';
   }
   return (
     <Image
@@ -463,9 +467,30 @@ export default function TMB() {
                         </span>
                       </div>
                     )}
+                    {typeof selected.Instruction === 'string' && (
+                      <div className="mb-4 text-black whitespace-pre-line">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeRaw]}
+                          skipHtml={false}
+                          components={{
+                            strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                            em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                            img: ({src, alt}) => safeImage(src, alt),
+                            a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
+                            ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                            li: ({children}) => <li className="mb-0">{children}</li>,
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                            span: ({node, ...props}) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                          }}
+                        >
+                          {preprocessAll(getString(selected.Instruction))}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                   {typeof selected.Skill === 'string' && (
                     <div className="mb-4 text-black whitespace-pre-line">
-                      <h1 className="font-bold">Skill:</h1>
+                      <h1 className="font-bold">Tyrant Skills:</h1>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeRaw]}
@@ -479,22 +504,56 @@ export default function TMB() {
                     </div>
                   )}
                   {typeof selected.Die === 'string' && (
-                    <div className="mb-4 text-black whitespace-pre-line">
-                      <div className="font-bold mb-1">
-                        {safeImage("/images/tydie.png", "Tyrant's Die")}:
-                      </div>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
-                        skipHtml={false}
-                        components={{
-                          img: ({src, alt}) => safeImage(src, alt)
-                        }}
-                      >
-                        {preprocessAll(getString(selected.Die))}
-                      </ReactMarkdown>
+                    <div className="mb-4 text-black">
+                      <h1 className="font-bold">Tyrant Die:</h1>
+                      {getString(selected.Die).split('\n').map((line, index) => {
+                        const match = line.match(/^\[icon:([a-zA-Z0-9_-]+)\]\s?(.*)$/);
+                        if (match) {
+                          const iconName = match[1];
+                          const content = match[2];
+                          return (
+                            <div key={index} className="flex items-start gap-2 mb-4">
+                              {safeImage(`/images/${iconName}.png`, iconName)}
+                              <div className="flex flex-col gap-1 text-sm">
+                                {content.split('\n').map((subLine, subIdx) => (
+                                  <ReactMarkdown
+                                    key={subIdx}
+                                    remarkPlugins={[remarkGfm]}
+                                    rehypePlugins={[rehypeRaw]}
+                                    skipHtml={false}
+                                    components={{
+                                      strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                                      em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                                      img: ({src, alt}) => (
+                                        <span style={{ display: 'inline-block', verticalAlign: '-1px' }}>
+                                          {safeImage(src, alt)}
+                                        </span>
+                                      ),
+                                    }}
+                                  >
+                                    {preprocessAll(subLine)}
+                                  </ReactMarkdown>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div key={index} className="text-sm whitespace-pre-line ml-8 mb-1">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]}
+                                skipHtml={false}
+                              >
+                                {preprocessAll(line)}
+                              </ReactMarkdown>
+                            </div>
+                          );
+                        }
+                      })}
                     </div>
                   )}
+
                   {typeof selected.Flavor === 'string' && (
                     <div className="text-gray-700 whitespace-pre-line">
                       <ReactMarkdown
