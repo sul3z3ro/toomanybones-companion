@@ -356,21 +356,46 @@ export default function TMB() {
             onClick={() => setSelected(null)}
           >×</button>
           {typeof selected.Img === 'string' && (
-            <Image
-              src={`/images/tmb-loot/${selected.Img}`}
-              alt={getString(selected.name)}
-              width={340}
-              height={340}
+            <div
               style={{
-                objectFit: "contain",
-                borderRadius: "24px",
-                background: "rgba(0,0,0,0.1)",
-                maxWidth: "90vw",
-                maxHeight: "80vh",
-                boxShadow: "0 2px 24px rgba(0,0,0,0.7)",
+                position: 'relative',
+                display: 'inline-block'
               }}
-              unoptimized
-            />
+              onContextMenu={e => e.preventDefault()}
+              onTouchStart={e => e.preventDefault()}
+            >
+              <Image
+                src={`/images/tmb-loot/${selected.Img}`}
+                alt={getString(selected.name)}
+                width={340}
+                height={340}
+                style={{
+                  objectFit: "contain",
+                  borderRadius: "24px",
+                  background: "rgba(0,0,0,0.1)",
+                  maxWidth: "90vw",
+                  maxHeight: "80vh",
+                  boxShadow: "0 2px 24px rgba(0,0,0,0.7)",
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                }}
+                unoptimized
+                draggable={false}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0, top: 0, right: 0, bottom: 0,
+                  zIndex: 10,
+                  background: 'rgba(0,0,0,0)', // โปร่งใส
+                  pointerEvents: 'auto',
+                  touchAction: 'none',
+                }}
+                onContextMenu={e => e.preventDefault()}
+                onTouchStart={e => e.preventDefault()}
+              />
+            </div>
           )}
         </motion.div>
       ) : (
