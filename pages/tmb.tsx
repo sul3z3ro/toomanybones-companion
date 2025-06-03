@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment, MouseEvent } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import yaml from 'js-yaml';
 import { useRouter } from 'next/router';
 import { Dialog, Transition } from '@headlessui/react';
@@ -109,20 +109,54 @@ export default function TMB() {
   const [currentTab, setCurrentTab] = useState('encounter');
   const [visibleMenus, setVisibleMenus] = useState<MenuGroup[]>([]);
   const [fadeIn, setFadeIn] = useState(false);
-
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+
   const activeMenu = "base";
 
+  const handleRedirect = (href: string) => {
+    router.push(href);
+  };
+
+  const handleModalOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) setSelected(null);
+  };
+
+  function splitCompleteReward(reward: string) {
+    if (!reward) return { left: [], right: [] };
+    const leftIcons = ['[icon:progress]', '[icon:progress1]', '[icon:progress2]'];
+    const items = reward.split(/,\s*/).filter(Boolean);
+    const left = items.filter(i => leftIcons.some(icon => i.includes(icon)));
+    const right = items.filter(i => !leftIcons.some(icon => i.includes(icon)));
+    return { left, right };
+  }
+
+  const validChoices: number[] = selected
+    ? [1, 2, 3].filter(
+        (n: number) =>
+          typeof selected[`Choice${n} Header`] === 'string' &&
+          getString(selected[`Choice${n} Header`])
+      )
+    : [];
+
+  // 1. Fade-in effect
   useEffect(() => {
     setFadeIn(false);
     const timer = setTimeout(() => setFadeIn(true), 40);
     return () => clearTimeout(timer);
   }, []);
 
+  // 2. ตรวจสอบสิทธิ์เมนู (และ whitelist)
   useEffect(() => {
     const email = typeof window !== 'undefined' ? sessionStorage.getItem('tmbc_user') : null;
     if (!email) {
       setVisibleMenus([]);
+      setAuthorized(false);
+      setLoading(false);
       return;
     }
     fetch('/api/get-access-menu', {
@@ -131,9 +165,19 @@ export default function TMB() {
       body: JSON.stringify({ email }),
     })
       .then((res) => res.json())
-      .then((data) => setVisibleMenus(data.menus || []));
-  }, []);
+      .then((data) => {
+        setVisibleMenus(data.menus || []);
+        // --- ตรวจสอบสิทธิ์เข้า tmb ---
+        if ((data.menus || []).some((m: { code: string }) => m.code === 'tmb')) {
+          setAuthorized(true);
+        } else {
+          setAuthorized(false);
+        }
+        setLoading(false);
+      });
+  }, [router]);
 
+  // 3. Fetch ข้อมูล YAML
   useEffect(() => {
     let file = '';
     if (currentTab === 'encounter') file = 'tmb-encounters.yaml';
@@ -145,40 +189,63 @@ export default function TMB() {
       .then(res => res.text())
       .then(text => setData(yaml.load(text) as Record<string, unknown>[]));
   }, [currentTab]);
-  const handleRedirect = (href: string) => {
-    router.push(href);
-  };
 
-  const handleModalOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) setSelected(null);
-  };
+  // 4. Block Click ขวา
+  useEffect(() => {
+    const handleContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
 
-  function splitCompleteReward(reward: string) {
-    if (!reward) return { left: [], right: [] };
-    const leftIcons = ['[icon:progress]', '[icon:progress1]', '[icon:progress2]'];
-    const items = reward.split(/,\s*/).filter(Boolean);
-    const left = items.filter(i => leftIcons.some(icon => i.includes(icon)));
-    const right = items.filter(i => !leftIcons.some(icon => i.includes(icon)));
-    return { left, right };
-  };
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const validChoices = selected
-    ? [1, 2, 3].filter(
-        n =>
-          typeof selected[`Choice${n} Header`] === 'string' &&
-          getString(selected[`Choice${n} Header`])
-      )
-    : [];
     useEffect(() => {
-      const handleContextMenu = (e: Event) => {
-        e.preventDefault();
-      };
-      document.addEventListener('contextmenu', handleContextMenu);
-      return () => {
-        document.removeEventListener('contextmenu', handleContextMenu);
-      };
-    }, []);
+      if (!loading && !authorized) {
+        setRedirecting(true);
+        setCountdown(5); // รีเซ็ตทุกครั้งที่ redirecting
+
+        const interval = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              if (typeof window !== 'undefined') {
+                router.replace('/');
+              }
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
+        return () => clearInterval(interval);
+      }
+    }, [loading, authorized, router]);
+
+    // --- จากนี้ค่อย return ---
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen text-white text-xl">
+          Loading...
+        </div>
+      );
+    }
+
+    if (redirecting) {
+      return (
+        <div className="flex items-center justify-center min-h-screen text-white text-xl">
+          <div className="text-center">
+            <div>ไม่มีสิทธิ์เข้าใช้งานหน้านี้ หากนี่คือข้อผิดพลาดกรุณาติดต่อ Admin</div>
+            <div className="mt-4 text-lg text-gray-300">
+              กลับหน้า Home ในอีก <span className="font-bold text-yellow-300">{countdown}</span> วินาที
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+
   return (
     <div className={`min-h-screen bg-black flex flex-col md:flex-row relative transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
       {/* Burger menu button */}

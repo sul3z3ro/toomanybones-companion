@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment, MouseEvent } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import yaml from 'js-yaml';
 import { useRouter } from 'next/router';
 import { Dialog, Transition } from '@headlessui/react';
@@ -109,48 +109,20 @@ export default function TMB() {
   const [currentTab, setCurrentTab] = useState('encounter');
   const [visibleMenus, setVisibleMenus] = useState<MenuGroup[]>([]);
   const [fadeIn, setFadeIn] = useState(false);
-
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+
   const activeMenu = "undertow";
-
-  useEffect(() => {
-    setFadeIn(false);
-    const timer = setTimeout(() => setFadeIn(true), 40);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const email = typeof window !== 'undefined' ? sessionStorage.getItem('tmbc_user') : null;
-    if (!email) {
-      setVisibleMenus([]);
-      return;
-    }
-    fetch('/api/get-access-menu', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-      .then((res) => res.json())
-      .then((data) => setVisibleMenus(data.menus || []));
-  }, []);
-
-  useEffect(() => {
-    let file = '';
-    if (currentTab === 'encounter') file = 'tmbut-encounters.yaml';
-    else if (currentTab === 'solo') file = 'tmbut-encounters-solo.yaml';
-    else if (currentTab === 'tyrants') file = 'tmbut-tyrants.yaml';
-    else if (currentTab === 'loots') file = 'tmbut-loots.yaml';
-    else file = 'tmbut-encounters.yaml';
-    fetch(`/data/Undertow/${file}`)
-      .then(res => res.text())
-      .then(text => setData(yaml.load(text) as Record<string, unknown>[]));
-  }, [currentTab]);
 
   const handleRedirect = (href: string) => {
     router.push(href);
   };
 
-  const handleModalOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
+  const handleModalOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) setSelected(null);
   };
 
@@ -163,13 +135,116 @@ export default function TMB() {
     return { left, right };
   }
 
-  const validChoices = selected
+  const validChoices: number[] = selected
     ? [1, 2, 3].filter(
-        n =>
+        (n: number) =>
           typeof selected[`Choice${n} Header`] === 'string' &&
           getString(selected[`Choice${n} Header`])
       )
     : [];
+
+  // 1. Fade-in effect
+  useEffect(() => {
+    setFadeIn(false);
+    const timer = setTimeout(() => setFadeIn(true), 40);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 2. ตรวจสอบสิทธิ์เมนู (และ whitelist)
+  useEffect(() => {
+    const email = typeof window !== 'undefined' ? sessionStorage.getItem('tmbc_user') : null;
+    if (!email) {
+      setVisibleMenus([]);
+      setAuthorized(false);
+      setLoading(false);
+      return;
+    }
+    fetch('/api/get-access-menu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setVisibleMenus(data.menus || []);
+        // --- ตรวจสอบสิทธิ์เข้า tmb ---
+        if ((data.menus || []).some((m: { code: string }) => m.code === 'tmbut')) {
+          setAuthorized(true);
+        } else {
+          setAuthorized(false);
+        }
+        setLoading(false);
+      });
+  }, [router]);
+
+  // 3. Fetch ข้อมูล YAML
+  useEffect(() => {
+    let file = '';
+    if (currentTab === 'encounter') file = 'tmbut-encounters.yaml';
+    else if (currentTab === 'solo') file = 'tmbut-encounters-solo.yaml';
+    else if (currentTab === 'tyrants') file = 'tmbut-tyrants.yaml';
+    else if (currentTab === 'loots') file = 'tmbut-loots.yaml';
+    else file = 'tmbut-encounters.yaml';
+    fetch(`/data/Undertow/${file}`)
+      .then(res => res.text())
+      .then(text => setData(yaml.load(text) as Record<string, unknown>[]));
+  }, [currentTab]);
+
+  // 4. Block Click ขวา
+  useEffect(() => {
+    const handleContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
+    useEffect(() => {
+      if (!loading && !authorized) {
+        setRedirecting(true);
+        setCountdown(5); // รีเซ็ตทุกครั้งที่ redirecting
+
+        const interval = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              if (typeof window !== 'undefined') {
+                router.replace('/');
+              }
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
+        return () => clearInterval(interval);
+      }
+    }, [loading, authorized, router]);
+
+    // --- จากนี้ค่อย return ---
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen text-white text-xl">
+          Loading...
+        </div>
+      );
+    }
+
+    if (redirecting) {
+      return (
+        <div className="flex items-center justify-center min-h-screen text-white text-xl">
+          <div className="text-center">
+            <div>ไม่มีสิทธิ์เข้าใช้งานหน้านี้ หากนี่คือข้อผิดพลาดกรุณาติดต่อ Admin</div>
+            <div className="mt-4 text-lg text-gray-300">
+              กลับหน้า Home ในอีก <span className="font-bold text-yellow-300">{countdown}</span> วินาที
+            </div>
+          </div>
+        </div>
+      );
+    }
+
 
   return (
     <div className={`min-h-screen bg-black flex flex-col md:flex-row relative transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
@@ -236,11 +311,7 @@ export default function TMB() {
       <aside className="hidden md:flex flex-col w-64 bg-gray-900 h-screen sticky top-0">
         <div className="flex flex-col gap-2 px-6 py-8">
           <div className="text-white text-lg font-bold mb-6">เมนู</div>
-          {[
-            { code: "base", label: "Too Many Bones", href: "/tmb" },
-            { code: "undertow", label: "Too Many Bones: Undertow", href: "/tmbut" },
-            { code: "unbreakable", label: "Too Many Bones: Unbreakable", href: "/tmbub" },
-          ].map(menu => (
+          {visibleMenus.map(menu => (
             <button
               key={menu.code}
               className={
@@ -249,7 +320,7 @@ export default function TMB() {
                   ? "bg-blue-600 text-white font-bold shadow"
                   : "bg-gray-800 text-white hover:bg-blue-700")
               }
-              onClick={() => handleRedirect(menu.href)}
+              onClick={() => handleRedirect(`/${menu.code}`)}
             >
               {menu.label}
             </button>
@@ -273,6 +344,15 @@ export default function TMB() {
       {/* Main content area */}
       <main className="flex-1 flex flex-col items-center pt-16 pb-24 md:py-12 px-2 md:px-8">
         <h1 className="text-white text-2xl mb-6 font-bold">{navTabs.find(t => t.key === currentTab)?.label}</h1>
+        <div className="w-full max-w-2xl mb-4">
+          <input
+            type="text"
+            className="w-full rounded px-3 py-2 border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
+            placeholder="ค้นหาการ์ด..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentTab}
@@ -282,45 +362,134 @@ export default function TMB() {
             transition={{ type: "spring", stiffness: 350, damping: 30, duration: 0.35 }}
             className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4 bg-black"
           >
-            {data.map(card => (
-              <button
-                key={getString(card.id)}
-                className="bg-gray-900 text-white rounded p-4 shadow hover:bg-gray-700 text-left"
-                onClick={() => setSelected(card)}
-              >
-                <div className="font-bold">{getString(card.name)}</div>
-                <div className="text-xs opacity-70">{getString(card.type)}</div>
-              </button>
-            ))}
+            {data
+              .filter(card => {
+                const text =
+                  getString(card.name).toLowerCase() +
+                  ' ' +
+                  getString(card.Description).toLowerCase();
+                return text.includes(searchTerm.toLowerCase());
+              })
+              .map(card => (
+                <button
+                  key={getString(card.id)}
+                  className="bg-gray-900 text-white rounded p-4 shadow hover:bg-gray-700 text-left"
+                  onClick={() => setSelected(card)}
+                >
+                  <div className="font-bold">{getString(card.name)}</div>
+                  <div className="text-xs opacity-70">{getString(card.type)}</div>
+                </button>
+              ))}
           </motion.div>
         </AnimatePresence>
 
-        {/* ----------- MODAL ----------- */}
-        <AnimatePresence>
-          {selected && (
-            <motion.div
-              key="modal-bg"
-              className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              onClick={handleModalOverlayClick}
-              style={{ cursor: "pointer" }}
+{/* ----------- MODAL ----------- */}
+<AnimatePresence>
+  {selected && (
+    <motion.div
+      key="modal-bg"
+      className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22 }}
+      onClick={handleModalOverlayClick}
+      style={{ cursor: "pointer" }}
+    >
+      {currentTab === 'loots' ? (
+        // ----- MODAL เฉพาะ Loot (มีแต่รูป) -----
+        <motion.div
+          key="modal-loot"
+          initial={{ opacity: 0, scale: 0.92, y: 40 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 340, damping: 24 }
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.97,
+            x: 240,
+            transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] }
+          }}
+          className="bg-transparent shadow-none p-0 m-0 flex flex-col items-center justify-center relative"
+          style={{ boxShadow: "none", background: "transparent", maxHeight: "90vh", cursor: "auto" }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 left-3 text-white text-2xl z-10"
+            style={{ textShadow: "0 1px 8px #000" }}
+            onClick={() => setSelected(null)}
+          >×</button>
+          {typeof selected.Img === 'string' && (
+            <div
+              style={{
+                position: 'relative',
+                display: 'inline-block'
+              }}
+              onContextMenu={e => e.preventDefault()}
+              onTouchStart={e => e.preventDefault()}
             >
-              <motion.div
-                key="modal-content"
-                initial={{ opacity: 0, scale: 0.92, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 340, damping: 24 } }}
-                exit={{ opacity: 0, scale: 0.97, x: 240, transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] } }}
-                className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 pb-10 relative"
-                style={{ maxHeight: '80vh', cursor: "auto" }}
-                onClick={e => e.stopPropagation()}
-              >
-                <button
-                  className="absolute top-2 right-3 text-black text-xl"
-                  onClick={() => setSelected(null)}
-                >×</button>
+              <Image
+                src={`/images/tmb-loot/${selected.Img}`}
+                alt={getString(selected.name)}
+                width={340}
+                height={340}
+                style={{
+                  objectFit: "contain",
+                  borderRadius: "24px",
+                  background: "rgba(0,0,0,0.1)",
+                  maxWidth: "90vw",
+                  maxHeight: "80vh",
+                  boxShadow: "0 2px 24px rgba(0,0,0,0.7)",
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                }}
+                unoptimized
+                draggable={false}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0, top: 0, right: 0, bottom: 0,
+                  zIndex: 10,
+                  background: 'rgba(0,0,0,0)', // โปร่งใส
+                  pointerEvents: 'auto',
+                  touchAction: 'none',
+                }}
+                onContextMenu={e => e.preventDefault()}
+                onTouchStart={e => e.preventDefault()}
+              />
+            </div>
+          )}
+        </motion.div>
+      ) : (
+        // ----- MODAL ปกติ (Encounter/Solo/Tyrant) -----
+        <motion.div
+          key="modal-content"
+          initial={{ opacity: 0, scale: 0.92, y: 40 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 340, damping: 24 }
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.97,
+            x: 240,
+            transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] }
+          }}
+          className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 pb-10 relative flex flex-col items-center"
+          style={{ maxHeight: "80vh", cursor: "auto" }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-3 text-black text-xl"
+            onClick={() => setSelected(null)}
+          >×</button>
 
                 {/* ------- scrollable modal content ------ */}
                 <div className="overflow-y-auto pr-1" style={{ maxHeight: 'calc(80vh - 64px)' }}>
@@ -622,13 +791,17 @@ export default function TMB() {
                     className="absolute bottom-4 right-6 px-3 py-1 rounded-full bg-yellow-300 text-gray-900 font-bold shadow-lg text-xs"
                     style={{ pointerEvents: "none" }}
                   >
-                    ใช้ได้ {getString(selected["number of uses"])} ครั้ง
-                  </div>
+                    {getString(selected["number of uses"]) === "0"
+                      ? "ถาวร"
+                      : `ใช้ได้ ${getString(selected["number of uses"])} ครั้ง`
+                    }
+                </div>
                 )}
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
         {/* ----------- END MODAL ----------- */}
       </main>
 
