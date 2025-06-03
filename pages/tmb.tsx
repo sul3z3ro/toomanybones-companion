@@ -145,7 +145,6 @@ export default function TMB() {
       .then(res => res.text())
       .then(text => setData(yaml.load(text) as Record<string, unknown>[]));
   }, [currentTab]);
-
   const handleRedirect = (href: string) => {
     router.push(href);
   };
@@ -161,7 +160,8 @@ export default function TMB() {
     const left = items.filter(i => leftIcons.some(icon => i.includes(icon)));
     const right = items.filter(i => !leftIcons.some(icon => i.includes(icon)));
     return { left, right };
-  }
+  };
+  const [searchTerm, setSearchTerm] = useState('');
 
   const validChoices = selected
     ? [1, 2, 3].filter(
@@ -170,7 +170,15 @@ export default function TMB() {
           getString(selected[`Choice${n} Header`])
       )
     : [];
-
+    useEffect(() => {
+      const handleContextMenu = (e: Event) => {
+        e.preventDefault();
+      };
+      document.addEventListener('contextmenu', handleContextMenu);
+      return () => {
+        document.removeEventListener('contextmenu', handleContextMenu);
+      };
+    }, []);
   return (
     <div className={`min-h-screen bg-black flex flex-col md:flex-row relative transition-opacity duration-700 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
       {/* Burger menu button */}
@@ -236,11 +244,7 @@ export default function TMB() {
       <aside className="hidden md:flex flex-col w-64 bg-gray-900 h-screen sticky top-0">
         <div className="flex flex-col gap-2 px-6 py-8">
           <div className="text-white text-lg font-bold mb-6">เมนู</div>
-          {[
-            { code: "base", label: "Too Many Bones", href: "/tmb" },
-            { code: "undertow", label: "Too Many Bones: Undertow", href: "/tmbut" },
-            { code: "unbreakable", label: "Too Many Bones: Unbreakable", href: "/tmbub" },
-          ].map(menu => (
+          {visibleMenus.map(menu => (
             <button
               key={menu.code}
               className={
@@ -249,7 +253,7 @@ export default function TMB() {
                   ? "bg-blue-600 text-white font-bold shadow"
                   : "bg-gray-800 text-white hover:bg-blue-700")
               }
-              onClick={() => handleRedirect(menu.href)}
+              onClick={() => handleRedirect(`/${menu.code}`)}
             >
               {menu.label}
             </button>
@@ -273,6 +277,15 @@ export default function TMB() {
       {/* Main content area */}
       <main className="flex-1 flex flex-col items-center pt-16 pb-24 md:py-12 px-2 md:px-8">
         <h1 className="text-white text-2xl mb-6 font-bold">{navTabs.find(t => t.key === currentTab)?.label}</h1>
+        <div className="w-full max-w-2xl mb-4">
+          <input
+            type="text"
+            className="w-full rounded px-3 py-2 border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
+            placeholder="ค้นหาการ์ด..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentTab}
@@ -282,45 +295,109 @@ export default function TMB() {
             transition={{ type: "spring", stiffness: 350, damping: 30, duration: 0.35 }}
             className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4 bg-black"
           >
-            {data.map(card => (
-              <button
-                key={getString(card.id)}
-                className="bg-gray-900 text-white rounded p-4 shadow hover:bg-gray-700 text-left"
-                onClick={() => setSelected(card)}
-              >
-                <div className="font-bold">{getString(card.name)}</div>
-                <div className="text-xs opacity-70">{getString(card.type)}</div>
-              </button>
-            ))}
+            {data
+              .filter(card => {
+                const text =
+                  getString(card.name).toLowerCase() +
+                  ' ' +
+                  getString(card.Description).toLowerCase();
+                return text.includes(searchTerm.toLowerCase());
+              })
+              .map(card => (
+                <button
+                  key={getString(card.id)}
+                  className="bg-gray-900 text-white rounded p-4 shadow hover:bg-gray-700 text-left"
+                  onClick={() => setSelected(card)}
+                >
+                  <div className="font-bold">{getString(card.name)}</div>
+                  <div className="text-xs opacity-70">{getString(card.type)}</div>
+                </button>
+              ))}
           </motion.div>
         </AnimatePresence>
 
-        {/* ----------- MODAL ----------- */}
-        <AnimatePresence>
-          {selected && (
-            <motion.div
-              key="modal-bg"
-              className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              onClick={handleModalOverlayClick}
-              style={{ cursor: "pointer" }}
-            >
-              <motion.div
-                key="modal-content"
-                initial={{ opacity: 0, scale: 0.92, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 340, damping: 24 } }}
-                exit={{ opacity: 0, scale: 0.97, x: 240, transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] } }}
-                className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 pb-10 relative"
-                style={{ maxHeight: '80vh', cursor: "auto" }}
-                onClick={e => e.stopPropagation()}
-              >
-                <button
-                  className="absolute top-2 right-3 text-black text-xl"
-                  onClick={() => setSelected(null)}
-                >×</button>
+{/* ----------- MODAL ----------- */}
+<AnimatePresence>
+  {selected && (
+    <motion.div
+      key="modal-bg"
+      className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22 }}
+      onClick={handleModalOverlayClick}
+      style={{ cursor: "pointer" }}
+    >
+      {currentTab === 'loots' ? (
+        // ----- MODAL เฉพาะ Loot (มีแต่รูป) -----
+        <motion.div
+          key="modal-loot"
+          initial={{ opacity: 0, scale: 0.92, y: 40 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 340, damping: 24 }
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.97,
+            x: 240,
+            transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] }
+          }}
+          className="bg-transparent shadow-none p-0 m-0 flex flex-col items-center justify-center relative"
+          style={{ boxShadow: "none", background: "transparent", maxHeight: "90vh", cursor: "auto" }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 left-3 text-white text-2xl z-10"
+            style={{ textShadow: "0 1px 8px #000" }}
+            onClick={() => setSelected(null)}
+          >×</button>
+          {typeof selected.Img === 'string' && (
+            <Image
+              src={`/images/tmb-loot/${selected.Img}`}
+              alt={getString(selected.name)}
+              width={340}
+              height={340}
+              style={{
+                objectFit: "contain",
+                borderRadius: "24px",
+                background: "rgba(0,0,0,0.1)",
+                maxWidth: "90vw",
+                maxHeight: "80vh",
+                boxShadow: "0 2px 24px rgba(0,0,0,0.7)",
+              }}
+              unoptimized
+            />
+          )}
+        </motion.div>
+      ) : (
+        // ----- MODAL ปกติ (Encounter/Solo/Tyrant) -----
+        <motion.div
+          key="modal-content"
+          initial={{ opacity: 0, scale: 0.92, y: 40 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 340, damping: 24 }
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.97,
+            x: 240,
+            transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] }
+          }}
+          className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 pb-10 relative flex flex-col items-center"
+          style={{ maxHeight: "80vh", cursor: "auto" }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-3 text-black text-xl"
+            onClick={() => setSelected(null)}
+          >×</button>
 
                 {/* ------- scrollable modal content ------ */}
                 <div className="overflow-y-auto pr-1" style={{ maxHeight: 'calc(80vh - 64px)' }}>
@@ -622,13 +699,17 @@ export default function TMB() {
                     className="absolute bottom-4 right-6 px-3 py-1 rounded-full bg-yellow-300 text-gray-900 font-bold shadow-lg text-xs"
                     style={{ pointerEvents: "none" }}
                   >
-                    ใช้ได้ {getString(selected["number of uses"])} ครั้ง
-                  </div>
+                    {getString(selected["number of uses"]) === "0"
+                      ? "ถาวร"
+                      : `ใช้ได้ ${getString(selected["number of uses"])} ครั้ง`
+                    }
+                </div>
                 )}
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
         {/* ----------- END MODAL ----------- */}
       </main>
 

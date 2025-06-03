@@ -1,9 +1,193 @@
-- id: "01"
-  name: "Fortunate Discovery"
+- name: "Flare Distraction"
   type: "Loot"
-  number of uses: "1"
-  Description: |
-    เลือกลูกเต๋า consumable ของคุณและวางมันลงไปในช่องสกิลบนแผ่นเกียร์ลอค คุณสามารถนำไปใช้ได้ตามปกติ
-  Flavor: |
-    _"มาสร้างมันกันเถอะ"_
-    _- Tink_
+  Img: "flare-distraction.png"
+
+- name: "Fortunate Discovery"
+  type: "Loot"
+  Img: "fortunate-discovery.png"
+  
+- name: "Fresh Bog Meat"
+  type: "Loot"
+  Img: "fresh-bog-meat.png"
+  
+- name: "Gadget Arm"
+  type: "Loot"
+  Img: "gadget-arm.png" 
+  
+- name: "Infused Incense"
+  type: "Loot"
+  Img: "infused-incense.png"
+
+- name: "Last Battle Stew"
+  type: "Loot"
+  Img: "last-battle-stew.png"
+  
+- name: "Mechanical Assistance"
+  type: "Loot"
+  Img: "mechanical-assistance.png"
+  
+- name: "Mech-Pick"
+  type: "Loot"
+  Img: "mech-pick.png"
+  
+- name: "Mixed Berries"
+  type: "Loot"
+  Img: "mixed-berries.png"
+  
+- name: "Multi Tool"
+  type: "Loot"
+  Img: "multi-tool.png"
+  
+- name: "Oggot Herbs"
+  type: "Loot"
+  Img: "oggot-herbs.png"
+    
+- name: "Prying Iron"
+  type: "Loot"
+  Img: "prying-iron.png"
+    
+- name: "Red Minotaur"
+  type: "Loot"
+  Img: "red-minotaur.png"
+  
+- name: "Reflex Powder"
+  type: "Loot"
+  Img: "reflex-powder.png"
+
+- name: "Reinforced Buckler"
+  type: "Loot"
+  Img: "reinforced-buckler.png"
+  
+- name: "Rusty Optics"
+  type: "Loot"
+  Img: "rusty-optics.png"
+    
+- name: "Skinning Knife"
+  type: "Loot"
+  Img: "skinning-knife.png"
+  
+- name: "Sparring Weapon"
+  type: "Loot"
+  Img: "sparring-weapon.png"
+  
+- name: "Spirits of Ebon"
+  type: "Loot"
+  Img: "spirits-of-ebon.png"
+    
+- name: "Stone Hammer"
+  type: "Loot"
+  Img: "stone-hammer.png"
+    
+- name: "Tattered Map"
+  type: "Loot"
+  Img: "tattered-map.png"
+
+- name: "Tewaren Gem"
+  type: "Loot"
+  Img: "tewaren-gem.png" 
+  
+- name: "Throwing Axe"
+  type: "Loot"
+  Img: "throwing-axe.png"
+    
+- name: "Treasure Trove Map"
+  type: "Loot"
+  Img: "treasure-trove-map.png"
+  
+- name: "Troll Brew"
+  type: "Loot"
+  Img: "troll-brew.png"
+    
+- name: "Utility Parts"
+  type: "Loot"
+  Img: "utility-parts.png"
+    
+- name: "Zelfey Root"
+  type: "Loot"
+  Img: "zelfey-root.png"
+    
+- name: "Zelfey Seeds"
+  type: "Loot"
+  Img: "zelfey-seeds.png"
+
+
+
+- name: "Dex Infuser"
+  type: "Trove Loot"
+  Img: "dex-infuser.png"
+  
+- name: "Exploding Shrooms"
+  type: "Trove Loot"
+  Img: "exploding-shrooms.png"
+  
+- name: "Flash Arrows"
+  type: "Trove Loot"
+  Img: "flash-arrows.png"
+  
+- name: "Grappling Gun"
+  type: "Trove Loot"
+  Img: "grappling-gun.png"
+  
+- name: "Hunter's Body Count Necklace"
+  type: "Trove Loot"
+  Img: "hunters-body-count-necklace.png"
+  
+- name: "Laser Pointer"
+  type: "Trove Loot"
+  Img: "laser-pointer.png"
+  
+- name: "Lightning on a Stick"
+  type: "Trove Loot"
+  Img: "lightning-on-a-stick.png"
+  
+- name: "Locksmith Manual"
+  type: "Trove Loot"
+  Img: "locksmith-manual.png"
+
+- name: "Maximizer Stim"
+  type: "Trove Loot"
+  Img: "maximizer-stim.png"
+  
+- name: "Mechanical Boomerang"
+  type: "Trove Loot"
+  Img: "mechanical-boomerang.png"
+  
+- name: "Mechanical Squirrel"
+  type: "Trove Loot"
+  Img: "mechanical-squirrel.png"
+  
+- name: "Micro Neural Implant"
+  type: "Trove Loot"
+  Img: "micro-neural-implant.png"
+
+- name: "Minor Patch Kit"
+  type: "Trove Loot"
+  Img: "minor-patch-kit.png"
+  
+- name: "Pip-Loc 2000"
+  type: "Trove Loot"
+  Img: "pip-loc-2000.png"
+  
+- name: "Poison Vial Kit"
+  type: "Trove Loot"
+  Img: "poison-vial-kit.png"
+  
+- name: "Reflex Powder Tin"
+  type: "Trove Loot"
+  Img: "reflex-powder-tin.png"
+  
+- name: "Shock Inducer"
+  type: "Trove Loot"
+  Img: "shock-inducer.png"
+
+- name: "Shoulder-Mounted Rock Slinger"
+  type: "Trove Loot"
+  Img: "shoulder-mounted-rock-slinger.png"
+  
+- name: "Small Spotting Scope"
+  type: "Trove Loot"
+  Img: "small-spotting-scope.png"
+  
+- name: "Utility Belt"
+  type: "Trove Loot"
+  Img: "utility-belt.png"
