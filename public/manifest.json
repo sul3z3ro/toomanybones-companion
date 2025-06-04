@@ -1,0 +1,21 @@
+{
+  "name": "Too Many Bones Companion",
+  "short_name": "TMB Companion",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b375a",
+  "theme_color": "#1976d2",
+  "description": "ตัวช่วยบอร์ดเกม Too Many Bones ภาษาไทย",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
