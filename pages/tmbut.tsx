@@ -14,10 +14,19 @@ import React from 'react';
 function preprocessWithIcons(text: string) {
   if (!text) return "";
   // icon-tx
-  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/images/$1-tx.png)');
+  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1-tx.png)');
   // icon ปกติ
-  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/images/$1.png)');
+  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1.png)');
   return text;
+}
+
+function preprocessImages(text: string): string {
+  if (!text) return "";
+  // [img:ชื่อ--] หรือ [img:ชื่อ.png--] → ให้ path มี -- ต่อท้าย เช่น /images/tmbut-encounter-position/xx.png--
+  return text.replace(/\[img:([a-zA-Z0-9_-]+)(\.png)?(--)?\]/g, (m, name, ext, full) => {
+    const file = name + (ext || '.png') + (full ? '--' : '');
+    return `![](/images/tmbut-encounter-position/${file})`;
+  });
 }
 
 // ===== 2. PREPROCESS COLOR TAG ([green]...[/green]) ให้เป็น HTML =====
@@ -48,7 +57,9 @@ function replaceNoBreakTags(text: string): string {
 function preprocessAll(text: string): string {
   return replaceNoBreakTags(
     replaceColorTags(
-      preprocessWithIcons(text)
+      preprocessImages(
+        preprocessWithIcons(text)
+      )
     )
   );
 }
@@ -70,9 +81,52 @@ function getString(val: unknown): string {
 }
 
 // ===== Helper ปลอดภัยสำหรับ Next/Image ใน markdown =====
-function safeImage(src?: string | Blob, alt?: string) {
-  if (typeof src !== "string" || src.trim() === "") return null;
-  const imgSrc = src.startsWith('/') ? src : '/' + src;
+    function safeImage(src?: string | Blob, alt?: string) {
+      if (typeof src !== "string" || src.trim() === "") return null;
+      let imgSrc = src.startsWith('/') ? src : '/' + src;
+
+      // เฉพาะ images/tmbut-encounter-position/...
+      if (imgSrc.startsWith('/images/tmbut-encounter-position/')) {
+        // ถ้า file name ลงท้าย -- (หรือ .png--)
+        const noResize = imgSrc.endsWith('--') || imgSrc.match(/\.png--$/);
+
+        if (noResize) {
+          // ตัด -- ออกก่อนโหลด
+          imgSrc = imgSrc.replace('--', '');
+          return (
+            <Image
+              src={imgSrc}
+              alt={alt || ""}
+              width={0}
+              height={0}
+              sizes="100vw"
+              style={{
+                display: 'block',
+                maxWidth: '100%',
+                height: 'auto',
+                margin: '8px 0'
+              }}
+              unoptimized
+            />
+          );
+        } else {
+          // default resize (เช่น 50x50)
+          return (
+            <Image
+              src={imgSrc}
+              alt={alt || ""}
+              width={150}
+              height={150}
+              style={{
+                display: 'inline-block',
+                margin: '2px 0',
+                verticalAlign: 'middle',
+              }}
+              unoptimized
+            />
+          );
+        }
+      }
   let w = 30, h = 30;
   let verticalAlign = 'middle';
   if (imgSrc.includes('-tx.png')) {
@@ -432,7 +486,7 @@ export default function TMB() {
               onTouchStart={e => e.preventDefault()}
             >
               <Image
-                src={`/images/tmb-loot/${selected.Img}`}
+                src={`/images/tmbut-loot/${selected.Img}`}
                 alt={getString(selected.name)}
                 width={340}
                 height={340}
@@ -682,7 +736,7 @@ export default function TMB() {
                           const content = match[2];
                           return (
                             <div key={index} className="flex items-start gap-2 mb-4">
-                              {safeImage(`/images/${iconName}.png`, iconName)}
+                              {safeImage(`/icons/${iconName}.png`, iconName)}
                               <div className="flex flex-col gap-1 text-sm">
                                 {content.split('\n').map((subLine, subIdx) => (
                                   <ReactMarkdown

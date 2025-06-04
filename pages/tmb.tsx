@@ -14,9 +14,9 @@ import React from 'react';
 function preprocessWithIcons(text: string) {
   if (!text) return "";
   // icon-tx
-  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/images/$1-tx.png)');
+  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1-tx.png)');
   // icon ปกติ
-  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/images/$1.png)');
+  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1.png)');
   return text;
 }
 
@@ -682,7 +682,7 @@ export default function TMB() {
                           const content = match[2];
                           return (
                             <div key={index} className="flex items-start gap-2 mb-4">
-                              {safeImage(`/images/${iconName}.png`, iconName)}
+                              {safeImage(`/icons/${iconName}.png`, iconName)}
                               <div className="flex flex-col gap-1 text-sm">
                                 {content.split('\n').map((subLine, subIdx) => (
                                   <ReactMarkdown
