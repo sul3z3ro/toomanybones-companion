@@ -431,9 +431,33 @@ export default function TMB() {
                   onClick={() => setSelected(card)}
                 >
                   <div className="font-bold">{getString(card.name)}</div>
-                  <div className="text-xs opacity-70">{getString(card.type)}</div>
+                  {typeof card.type === 'string' && card.type && (
+                    <div
+                      className={
+                        "inline-block mt-2 px-3 py-1 rounded-md font-semibold text-xs shadow " +
+                        (card.type === "Special"
+                          ? "bg-yellow-400 text-black"
+                          : card.type === "General"
+                          ? "bg-green-800 text-white"
+                          : card.type === "Solo"
+                          ? "bg-gray-600 text-white"
+                          : card.type === "Tyrant"
+                          ? "bg-blue-600 text-white"
+                          : card.type === "Loot"
+                          ? "bg-yellow-600 text-white"
+                          : "bg-orange-800 text-gray-100"
+                        )
+                      }
+                      style={{
+                        minWidth: 70,
+                        textAlign: "center"
+                      }}
+                    >
+                      {card.type}
+                    </div>
+                  )}
                 </button>
-              ))}
+            ))}
           </motion.div>
         </AnimatePresence>
 

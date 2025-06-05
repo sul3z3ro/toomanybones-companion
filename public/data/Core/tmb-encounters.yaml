@@ -686,7 +686,7 @@
   Choice3 Reward: ""
   Complete Reward: ""
 
-- id: "sp01"
+- id: "day1"
   name: "SP01-Leaving Obendar"
   type: "Special"
   set: "core"
@@ -705,7 +705,7 @@
   Choice3 Reward: ""
   Complete Reward: "[icon:progress1], "
 
-- id: "sp02"
+- id: "day2"
   name: "SP02-Hardly Out the Gate"
   type: "Special"
   set: "core"
@@ -733,7 +733,7 @@
   Choice3 Reward: ""
   Complete Reward: "[icon:progress1], [icon:train][icon:loot-all]"
 
-- id: "sp03"
+- id: "day3"
   name: "SP03-Crossing the Sibron"
   type: "Special"
   set: "core"
