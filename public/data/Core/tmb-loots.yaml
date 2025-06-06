@@ -1,193 +1,241 @@
 - name: "Flare Distraction"
   type: "Loot"
+  set: "core"
   Img: "flare-distraction.png"
 
 - name: "Fortunate Discovery"
   type: "Loot"
+  set: "core"
   Img: "fortunate-discovery.png"
   
 - name: "Fresh Bog Meat"
   type: "Loot"
+  set: "core"
   Img: "fresh-bog-meat.png"
   
 - name: "Gadget Arm"
   type: "Loot"
+  set: "core"
   Img: "gadget-arm.png" 
   
 - name: "Infused Incense"
   type: "Loot"
+  set: "core"
   Img: "infused-incense.png"
 
 - name: "Last Battle Stew"
   type: "Loot"
+  set: "core"
   Img: "last-battle-stew.png"
   
 - name: "Mechanical Assistance"
   type: "Loot"
+  set: "core"
   Img: "mechanical-assistance.png"
   
 - name: "Mech-Pick"
   type: "Loot"
+  set: "core"
   Img: "mech-pick.png"
   
 - name: "Mixed Berries"
   type: "Loot"
+  set: "core"
   Img: "mixed-berries.png"
   
 - name: "Multi Tool"
   type: "Loot"
+  set: "core"
   Img: "multi-tool.png"
   
 - name: "Oggot Herbs"
   type: "Loot"
+  set: "core"
   Img: "oggot-herbs.png"
     
 - name: "Prying Iron"
   type: "Loot"
+  set: "core"
   Img: "prying-iron.png"
     
 - name: "Red Minotaur"
   type: "Loot"
+  set: "core"
   Img: "red-minotaur.png"
   
 - name: "Reflex Powder"
   type: "Loot"
+  set: "core"
   Img: "reflex-powder.png"
 
 - name: "Reinforced Buckler"
   type: "Loot"
+  set: "core"
   Img: "reinforced-buckler.png"
   
 - name: "Rusty Optics"
   type: "Loot"
+  set: "core"
   Img: "rusty-optics.png"
     
 - name: "Skinning Knife"
   type: "Loot"
+  set: "core"
   Img: "skinning-knife.png"
   
 - name: "Sparring Weapon"
   type: "Loot"
+  set: "core"
   Img: "sparring-weapon.png"
   
 - name: "Spirits of Ebon"
   type: "Loot"
+  set: "core"
   Img: "spirits-of-ebon.png"
     
 - name: "Stone Hammer"
   type: "Loot"
+  set: "core"
   Img: "stone-hammer.png"
     
 - name: "Tattered Map"
   type: "Loot"
+  set: "core"
   Img: "tattered-map.png"
 
 - name: "Tewaren Gem"
   type: "Loot"
+  set: "core"
   Img: "tewaren-gem.png" 
   
 - name: "Throwing Axe"
   type: "Loot"
+  set: "core"
   Img: "throwing-axe.png"
     
 - name: "Treasure Trove Map"
   type: "Loot"
+  set: "core"
   Img: "treasure-trove-map.png"
   
 - name: "Troll Brew"
   type: "Loot"
+  set: "core"
   Img: "troll-brew.png"
     
 - name: "Utility Parts"
   type: "Loot"
+  set: "core"
   Img: "utility-parts.png"
     
 - name: "Zelfey Root"
   type: "Loot"
+  set: "core"
   Img: "zelfey-root.png"
     
 - name: "Zelfey Seeds"
   type: "Loot"
+  set: "core"
   Img: "zelfey-seeds.png"
 
 
 
 - name: "Dex Infuser"
   type: "Trove Loot"
+  set: "core"
   Img: "dex-infuser.png"
   
 - name: "Exploding Shrooms"
   type: "Trove Loot"
+  set: "core"
   Img: "exploding-shrooms.png"
   
 - name: "Flash Arrows"
   type: "Trove Loot"
+  set: "core"
   Img: "flash-arrows.png"
   
 - name: "Grappling Gun"
   type: "Trove Loot"
+  set: "core"
   Img: "grappling-gun.png"
   
 - name: "Hunter's Body Count Necklace"
   type: "Trove Loot"
+  set: "core"
   Img: "hunters-body-count-necklace.png"
   
 - name: "Laser Pointer"
   type: "Trove Loot"
+  set: "core"
   Img: "laser-pointer.png"
   
 - name: "Lightning on a Stick"
   type: "Trove Loot"
+  set: "core"
   Img: "lightning-on-a-stick.png"
   
 - name: "Locksmith Manual"
   type: "Trove Loot"
+  set: "core"
   Img: "locksmith-manual.png"
 
 - name: "Maximizer Stim"
   type: "Trove Loot"
+  set: "core"
   Img: "maximizer-stim.png"
   
 - name: "Mechanical Boomerang"
   type: "Trove Loot"
+  set: "core"
   Img: "mechanical-boomerang.png"
   
 - name: "Mechanical Squirrel"
   type: "Trove Loot"
+  set: "core"
   Img: "mechanical-squirrel.png"
   
 - name: "Micro Neural Implant"
   type: "Trove Loot"
+  set: "core"
   Img: "micro-neural-implant.png"
 
 - name: "Minor Patch Kit"
   type: "Trove Loot"
+  set: "core"
   Img: "minor-patch-kit.png"
   
 - name: "Pip-Loc 2000"
   type: "Trove Loot"
+  set: "core"
   Img: "pip-loc-2000.png"
   
 - name: "Poison Vial Kit"
   type: "Trove Loot"
+  set: "core"
   Img: "poison-vial-kit.png"
   
 - name: "Reflex Powder Tin"
   type: "Trove Loot"
+  set: "core"
   Img: "reflex-powder-tin.png"
   
 - name: "Shock Inducer"
   type: "Trove Loot"
+  set: "core"
   Img: "shock-inducer.png"
 
 - name: "Shoulder-Mounted Rock Slinger"
   type: "Trove Loot"
+  set: "core"
   Img: "shoulder-mounted-rock-slinger.png"
   
 - name: "Small Spotting Scope"
   type: "Trove Loot"
+  set: "core"
   Img: "small-spotting-scope.png"
   
 - name: "Utility Belt"
   type: "Trove Loot"
+  set: "core"
   Img: "utility-belt.png"
