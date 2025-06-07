@@ -2,7 +2,7 @@ import { useEffect, useState, Fragment } from 'react';
 import yaml from 'js-yaml';
 import { useRouter } from 'next/router';
 import { Dialog, Transition } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon, UserCircleIcon, Squares2X2Icon, UserGroupIcon, GiftIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, UserCircleIcon, UserGroupIcon, GiftIcon, FaceFrownIcon, } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -59,9 +59,9 @@ type MenuGroup = {
 };
 
 const navTabs = [
-  { key: 'encounter', label: 'Encounter', icon: Squares2X2Icon },
+  { key: 'encounter', label: 'Encounter', icon: UserGroupIcon },
   { key: 'solo', label: 'Solo Encounter', icon: UserCircleIcon },
-  { key: 'tyrants', label: 'Tyrants', icon: UserGroupIcon },
+  { key: 'tyrants', label: 'Tyrants', icon: FaceFrownIcon },
   { key: 'loots', label: 'Loots & Trove Loots', icon: GiftIcon },
 ];
 
@@ -442,7 +442,7 @@ export default function TMB() {
           onClick={e => e.stopPropagation()}
         >
           <button
-            className="absolute top-2 left-3 text-white text-2xl z-10"
+            className="absolute top-2 left-3 text-white text-2xl z-20"
             style={{ textShadow: "0 1px 8px #000" }}
             onClick={() => setSelected(null)}
           >×</button>

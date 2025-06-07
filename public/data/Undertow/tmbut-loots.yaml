@@ -1,5 +1,210 @@
 
+- name: "Kelp Powder"
+  type: "Loot"
+  set: "undertow"
+  Img: "kelp-powder.png"
+
+- name: "Jungle Spear"
+  type: "Loot"
+  set: "undertow"
+  Img: "jungle-spear.png"
+
+- name: "Simple Snare"
+  type: "Loot"
+  set: "undertow"
+  Img: "simple-snare.png"
+
+- name: "Handled Blade"
+  type: "Loot"
+  set: "undertow"
+  Img: "handled-blade.png"
+
+- name: "Hunting Net"
+  type: "Loot"
+  set: "undertow"
+  Img: "hunting-net.png"
+
+- name: "Non-Essential Oils"
+  type: "Loot"
+  set: "undertow"
+  Img: "non-essential-oils.png"
+
+- name: "Sleeping Darts"
+  type: "Loot"
+  set: "undertow"
+  Img: "sleeping-darts.png"
+
+- name: "Dragon Scales"
+  type: "Loot"
+  set: "undertow"
+  Img: "dragon-scales.png"
+
+- name: "Spider Silk Salve"
+  type: "Loot"
+  set: "undertow"
+  Img: "spider-silk-salve.png"
+
+- name: "Harpoon Pistol"
+  type: "Loot"
+  set: "undertow"
+  Img: "harpoon-pistol.png"
+
+- name: "Powercell"
+  type: "Loot"
+  set: "undertow"
+  Img: "powercell.png"
+
+- name: "Loose Wires"
+  type: "Loot"
+  set: "undertow"
+  Img: "loose-wires.png"
+
+- name: "Malfunctioning Mech"
+  type: "Loot"
+  set: "undertow"
+  Img: "malfunctioning-mech.png"
+
 - name: "Fortunate Discovery"
   type: "Loot"
   set: "undertow"
   Img: "fortunate-discovery.png"
+
+- name: "Fish Dinner"
+  type: "Loot"
+  set: "undertow"
+  Img: "fish-dinner.png"
+
+- name: "Bananananas"
+  type: "Loot"
+  set: "undertow"
+  Img: "bananananas.png"
+
+- name: "Sibron Kelp"
+  type: "Loot"
+  set: "undertow"
+  Img: "sibron-kelp.png"
+
+- name: "Huckleberries"
+  type: "Loot"
+  set: "undertow"
+  Img: "huckleberries.png"
+
+- name: "Krelln Caviar"
+  type: "Loot"
+  set: "undertow"
+  Img: "krelln-caviar.png"
+
+- name: "Programmable Defibrillator"
+  type: "Loot"
+  set: "undertow"
+  Img: "programmable-defibrillator.png"
+
+- name: "Advanced Fishing Rod"
+  type: "Loot"
+  set: "undertow"
+  Img: "advanced-fishing-rod.png"
+
+- name: "Tar, Sap, & Twine"
+  type: "Loot"
+  set: "undertow"
+  Img: "tar-sap-twine.png"
+
+- name: "Augmented Footwear"
+  type: "Loot"
+  set: "undertow"
+  Img: "augmented-footwear.png"
+
+- name: "Plated Skull"
+  type: "Loot"
+  set: "undertow"
+  Img: "plated-skull.png"
+
+- name: "Gearloc's Guide to Advanced Tactics"
+  type: "Loot"
+  set: "undertow"
+  Img: "gearlocs-guide-to-advanced-tactics.png"
+
+- name: "Night Vision Goggles"
+  type: "Loot"
+  set: "undertow"
+  Img: "night-vision-goggles.png"
+
+- name: "Descaler"
+  type: "Loot"
+  set: "undertow"
+  Img: "descaler.png"
+
+- name: "Kakler Nest"
+  type: "Loot"
+  set: "undertow"
+  Img: "kakler-nest.png"
+
+- name: "Hearing Sensor"
+  type: "Loot"
+  set: "undertow"
+  Img: "hearing-sensor.png"
+
+- name: "Mecalabash Pipe"
+  type: "Loot"
+  set: "undertow"
+  Img: "mecalabash-pipe.png"
+
+- name: "Catapult"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "catapult.png"
+
+- name: "Watermask"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "watermask.png"
+
+- name: "Electrosynthetic Explosive"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "electrosynthetic-explosive.png"
+
+- name: "Aqua Cannon"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "aqua-cannon.png"
+
+- name: "Gadget Armor"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "gadget-armor.png"
+
+- name: "Fog Machine"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "fog-machine.png"
+
+- name: "Arm Energizer"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "arm-energizer.png"
+
+- name: "Dragon Center Scale"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "dragon-center-scale.png"
+
+- name: "Tackle Box"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "tackle-box.png"
+
+- name: "Black Pearl"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "black-pearl.png"
+
+- name: "Drone"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "drone.png"
+
+- name: "Mechanical Squid"
+  type: "Trove Loot"
+  set: "undertow"
+  Img: "mechanical-squid.png"

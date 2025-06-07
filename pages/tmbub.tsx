@@ -2,7 +2,7 @@ import { useEffect, useState, Fragment } from 'react';
 import yaml from 'js-yaml';
 import { useRouter } from 'next/router';
 import { Dialog, Transition } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon, UserCircleIcon, Squares2X2Icon, UserGroupIcon, GiftIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, UserCircleIcon, UserGroupIcon, GiftIcon, TrophyIcon, FaceFrownIcon, } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -14,10 +14,19 @@ import React from 'react';
 function preprocessWithIcons(text: string) {
   if (!text) return "";
   // icon-tx
-  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/images/$1-tx.png)');
+  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1-tx.png)');
   // icon ปกติ
-  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/images/$1.png)');
+  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1.png)');
   return text;
+}
+
+function preprocessImages(text: string): string {
+  if (!text) return "";
+  // [img:ชื่อ--] หรือ [img:ชื่อ.png--] → ให้ path มี -- ต่อท้าย เช่น /images/tmbub-encounter-position/xx.png--
+  return text.replace(/\[img:([a-zA-Z0-9_-]+)(\.png)?(--)?\]/g, (m, name, ext, full) => {
+    const file = name + (ext || '.png') + (full ? '--' : '');
+    return `![](/images/tmbub-encounter-position/${file})`;
+  });
 }
 
 // ===== 2. PREPROCESS COLOR TAG ([green]...[/green]) ให้เป็น HTML =====
@@ -48,7 +57,9 @@ function replaceNoBreakTags(text: string): string {
 function preprocessAll(text: string): string {
   return replaceNoBreakTags(
     replaceColorTags(
-      preprocessWithIcons(text)
+      preprocessImages(
+        preprocessWithIcons(text)
+      )
     )
   );
 }
@@ -59,10 +70,11 @@ type MenuGroup = {
 };
 
 const navTabs = [
-  { key: 'encounter', label: 'Encounter', icon: Squares2X2Icon },
+  { key: 'encounter', label: 'Encounter', icon: UserGroupIcon },
   { key: 'solo', label: 'Solo Encounter', icon: UserCircleIcon },
-  { key: 'tyrants', label: 'Tyrants', icon: UserGroupIcon },
+  { key: 'tyrants', label: 'Tyrants', icon: FaceFrownIcon },
   { key: 'loots', label: 'Loots & Trove Loots', icon: GiftIcon },
+  { key: 'campaign', label: 'Campaign/Epilogue', icon: TrophyIcon },
 ];
 
 function getString(val: unknown): string {
@@ -70,9 +82,52 @@ function getString(val: unknown): string {
 }
 
 // ===== Helper ปลอดภัยสำหรับ Next/Image ใน markdown =====
-function safeImage(src?: string | Blob, alt?: string) {
-  if (typeof src !== "string" || src.trim() === "") return null;
-  const imgSrc = src.startsWith('/') ? src : '/' + src;
+    function safeImage(src?: string | Blob, alt?: string) {
+      if (typeof src !== "string" || src.trim() === "") return null;
+      let imgSrc = src.startsWith('/') ? src : '/' + src;
+
+      // เฉพาะ images/tmbub-encounter-position/...
+      if (imgSrc.startsWith('/images/tmbub-encounter-position/')) {
+        // ถ้า file name ลงท้าย -- (หรือ .png--)
+        const noResize = imgSrc.endsWith('--') || imgSrc.match(/\.png--$/);
+
+        if (noResize) {
+          // ตัด -- ออกก่อนโหลด
+          imgSrc = imgSrc.replace('--', '');
+          return (
+            <Image
+              src={imgSrc}
+              alt={alt || ""}
+              width={0}
+              height={0}
+              sizes="100vw"
+              style={{
+                display: 'block',
+                maxWidth: '100%',
+                height: 'auto',
+                margin: '8px 0'
+              }}
+              unoptimized
+            />
+          );
+        } else {
+          // default resize (เช่น 50x50)
+          return (
+            <Image
+              src={imgSrc}
+              alt={alt || ""}
+              width={150}
+              height={150}
+              style={{
+                display: 'inline-block',
+                margin: '2px 0',
+                verticalAlign: 'middle',
+              }}
+              unoptimized
+            />
+          );
+        }
+      }
   let w = 30, h = 30;
   let verticalAlign = 'middle';
   if (imgSrc.includes('-tx.png')) {
@@ -167,7 +222,7 @@ export default function TMB() {
       .then((res) => res.json())
       .then((data) => {
         setVisibleMenus(data.menus || []);
-        // --- ตรวจสอบสิทธิ์เข้า tmbub ---
+        // --- ตรวจสอบสิทธิ์เข้า tmb ---
         if ((data.menus || []).some((m: { code: string }) => m.code === 'tmbub')) {
           setAuthorized(true);
         } else {
@@ -184,6 +239,7 @@ export default function TMB() {
     else if (currentTab === 'solo') file = 'tmbub-encounters-solo.yaml';
     else if (currentTab === 'tyrants') file = 'tmbub-tyrants.yaml';
     else if (currentTab === 'loots') file = 'tmbub-loots.yaml';
+    else if (currentTab === 'campaign') file = 'tmbub-campaign-epilogue.yaml';
     else file = 'tmbub-encounters.yaml';
     fetch(`/data/Unbreakable/${file}`)
       .then(res => res.text())
@@ -377,9 +433,37 @@ export default function TMB() {
                   onClick={() => setSelected(card)}
                 >
                   <div className="font-bold">{getString(card.name)}</div>
-                  <div className="text-xs opacity-70">{getString(card.type)}</div>
+                  {typeof card.type === 'string' && card.type && (
+                    <div
+                      className={
+                        "inline-block mt-2 px-3 py-1 rounded-md font-semibold text-xs shadow " +
+                        (card.type === "Special"
+                          ? "bg-yellow-400 text-black"
+                          : card.type === "General"
+                          ? "bg-green-800 text-white"
+                          : card.type === "Solo"
+                          ? "bg-gray-600 text-white"
+                          : card.type === "Tyrant"
+                          ? "bg-blue-600 text-white"
+                          : card.type === "Loot"
+                          ? "bg-yellow-600 text-white"
+                          : card.type === "Campaign"
+                          ? "bg-yellow-700 text-white"
+                          : card.type === "Epilogue"
+                          ? "bg-yellow-950 text-white"
+                          : "bg-black text-gray-100"
+                        )
+                      }
+                      style={{
+                        minWidth: 70,
+                        textAlign: "center"
+                      }}
+                    >
+                      {card.type}
+                    </div>
+                  )}
                 </button>
-              ))}
+            ))}
           </motion.div>
         </AnimatePresence>
 
@@ -418,7 +502,7 @@ export default function TMB() {
           onClick={e => e.stopPropagation()}
         >
           <button
-            className="absolute top-2 left-3 text-white text-2xl z-10"
+            className="absolute top-0 left-1 text-white text-2xl z-20"
             style={{ textShadow: "0 1px 8px #000" }}
             onClick={() => setSelected(null)}
           >×</button>
@@ -432,7 +516,7 @@ export default function TMB() {
               onTouchStart={e => e.preventDefault()}
             >
               <Image
-                src={`/images/tmb-loot/${selected.Img}`}
+                src={`/images/tmbub-loot/${selected.Img}`}
                 alt={getString(selected.name)}
                 width={340}
                 height={340}
@@ -682,7 +766,7 @@ export default function TMB() {
                           const content = match[2];
                           return (
                             <div key={index} className="flex items-start gap-2 mb-4">
-                              {safeImage(`/images/${iconName}.png`, iconName)}
+                              {safeImage(`/icons/${iconName}.png`, iconName)}
                               <div className="flex flex-col gap-1 text-sm">
                                 {content.split('\n').map((subLine, subIdx) => (
                                   <ReactMarkdown
@@ -785,6 +869,231 @@ export default function TMB() {
                     </>
                   );
                 })()}
+              {selected && (
+                <motion.div
+                  key="modal-bg"
+                  className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.22 }}
+                  onClick={handleModalOverlayClick}
+                  style={{ cursor: "pointer" }}
+                >
+                  <motion.div
+                    key="modal-content"
+                    initial={{ opacity: 0, scale: 0.92, y: 40 }}
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                      y: 0,
+                      transition: { type: "spring", stiffness: 340, damping: 24 }
+                    }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.97,
+                      x: 240,
+                      transition: { duration: 0.29, ease: [0.61, 1, 0.88, 1] }
+                    }}
+                    className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 pb-10 relative flex flex-col items-center"
+                    style={{ maxHeight: "80vh", cursor: "auto" }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <button
+                      className="absolute top-2 right-3 text-black text-xl"
+                      onClick={() => setSelected(null)}
+                    >×</button>
+                    <div className="overflow-y-auto pr-1" style={{ maxHeight: 'calc(80vh - 64px)' }}>
+                      <div className="text-lg font-bold mb-2">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeRaw]}
+                          skipHtml={false}
+                          components={{
+                            strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                            em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                            img: ({src, alt}) => safeImage(src, alt),
+                            span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                            ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                            li: ({children}) => <li className="mb-0">{children}</li>,
+                          }}
+                        >
+                          {preprocessAll(getString(selected.name) || getString(selected.id))}
+                        </ReactMarkdown>
+                      </div>
+                      {typeof selected.Description === 'string' && (
+                        <div className="mb-4 text-black whitespace-pre-line">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            skipHtml={false}
+                            components={{
+                              strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                              em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                              img: ({src, alt}) => safeImage(src, alt),
+                              a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
+                              ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                              li: ({children}) => <li className="mb-0">{children}</li>,
+                              span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                            }}
+                          >
+                            {preprocessAll(getString(selected.Description))}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                      {/* Campaign Reward สำหรับ type Campaign */}
+                      {selected.type === "Campaign" && typeof selected["Campaign Reward"] === "string" && (
+                        <div className="mb-4 text-black whitespace-pre-line">
+                          <h1 className="font-bold">Campaign Reward:</h1>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            skipHtml={false}
+                            components={{
+                              img: ({src, alt}) => safeImage(src, alt)
+                            }}
+                          >
+                            {preprocessAll(getString(selected["Campaign Reward"]))}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                      {/* Epilogue เฉพาะ */}
+                      {selected.type === "Epilogue" && typeof selected.Instruction === "string" && (
+                        <div className="mb-4 text-black whitespace-pre-line">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            skipHtml={false}
+                            components={{
+                              strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                              em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                              img: ({src, alt}) => safeImage(src, alt),
+                              a: ({children, href}) => <a href={href} className="text-blue-600 underline">{children}</a>,
+                              ul: ({children}) => <ul className="list-disc pl-5 my-0">{children}</ul>,
+                              li: ({children}) => <li className="mb-0">{children}</li>,
+                              span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                            }}
+                          >
+                            {preprocessAll(getString(selected.Instruction))}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                      {/* Die (เหมือน Encounter) */}
+                      {typeof selected.Die === 'string' && (
+                        <div className="mb-4 text-black">
+                          {getString(selected.Die).split('\n').map((line, index) => {
+                            const match = line.match(/^\[icon:([a-zA-Z0-9_-]+)\]\s?(.*)$/);
+                            if (match) {
+                              const iconName = match[1];
+                              const content = match[2];
+                              return (
+                                <div key={index} className="flex items-start gap-2 mb-4">
+                                  {safeImage(`/icons/${iconName}.png`, iconName)}
+                                  <div className="flex flex-col gap-1 text-sm">
+                                    {content.split('\n').map((subLine, subIdx) => (
+                                      <ReactMarkdown
+                                        key={subIdx}
+                                        remarkPlugins={[remarkGfm]}
+                                        rehypePlugins={[rehypeRaw]}
+                                        skipHtml={false}
+                                        components={{
+                                          strong: ({children}) => <strong className="font-bold text-black">{children}</strong>,
+                                          em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                                          img: ({src, alt}) => (
+                                            <span style={{ display: 'inline-block', verticalAlign: '-1px' }}>
+                                              {safeImage(src, alt)}
+                                            </span>
+                                          ),
+                                        }}
+                                      >
+                                        {preprocessAll(subLine)}
+                                      </ReactMarkdown>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <div key={index} className="text-sm whitespace-pre-line ml-8 mb-1">
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    rehypePlugins={[rehypeRaw]}
+                                    skipHtml={false}
+                                  >
+                                    {preprocessAll(line)}
+                                  </ReactMarkdown>
+                                </div>
+                              );
+                            }
+                          })}
+                        </div>
+                      )}
+                      {/* Flavor สำหรับ Epilogue */}
+                      {typeof selected.flavor === 'string' && (
+                        <div className="text-gray-700 text-center whitespace-pre-line">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            skipHtml={false}
+                            components={{
+                              em: ({children}) => <em className="italic text-gray-600">{children}</em>,
+                              span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>,
+                            }}
+                          >
+                            {preprocessAll(getString(selected.flavor))}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                      {/* Complete Reward (เหมือน Encounter) */}
+                      {typeof selected["Complete Reward"] === "string" && selected["Complete Reward"] && (() => {
+                        const { left, right } = splitCompleteReward(getString(selected["Complete Reward"]));
+                        return (
+                          <>
+                            {left.length > 0 && (
+                              <div className="absolute left-4 bottom-4 flex gap-2">
+                                {left.map((item, idx) => (
+                                  <span key={idx} className="flex items-center">
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      rehypePlugins={[rehypeRaw]}
+                                      skipHtml={false}
+                                      components={{
+                                        img: ({src, alt}) => safeImage(src, alt),
+                                        span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>
+                                      }}
+                                    >
+                                      {preprocessAll(item.trim())}
+                                    </ReactMarkdown>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {right.length > 0 && (
+                              <div className="absolute right-4 bottom-4 flex gap-2">
+                                {right.map((item, idx) => (
+                                  <span key={idx} className="flex items-center">
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      rehypePlugins={[rehypeRaw]}
+                                      skipHtml={false}
+                                      components={{
+                                        img: ({src, alt}) => safeImage(src, alt),
+                                        span: (props) => <span style={props.style as React.CSSProperties}>{props.children}</span>
+                                      }}
+                                    >
+                                      {preprocessAll(item.trim())}
+                                    </ReactMarkdown>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
 
                 {typeof selected["number of uses"] === "string" && selected["number of uses"] && (
                   <div
