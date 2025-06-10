@@ -447,6 +447,8 @@ export default function TMB() {
                           ? "bg-blue-600 text-white"
                           : card.type === "Loot"
                           ? "bg-yellow-600 text-white"
+                          : card.type === "Trove Loot"
+                          ? "bg-orange-700 text-white"
                           : card.type === "Campaign"
                           ? "bg-yellow-700 text-white"
                           : card.type === "Epilogue"
