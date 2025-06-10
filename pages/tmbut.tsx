@@ -73,8 +73,8 @@ const navTabs = [
   { key: 'encounter', label: 'Encounter', icon: UserGroupIcon },
   { key: 'solo', label: 'Solo Encounter', icon: UserCircleIcon },
   { key: 'tyrants', label: 'Tyrants', icon: FaceFrownIcon },
-  { key: 'loots', label: 'Loots & Trove Loots', icon: GiftIcon },
-  { key: 'campaign', label: 'Campaign/Epilogue', icon: TrophyIcon },
+  { key: 'loots', label: 'Loots & \nTrove Loots', icon: GiftIcon },
+  { key: 'campaign', label: 'Campaign\nEpilogue', icon: TrophyIcon },
 ];
 
 function getString(val: unknown): string {
