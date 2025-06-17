@@ -10,6 +10,26 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import React from 'react';
 
+// ===== 1. PREPROCESS ICON TAG =====
+function preprocessWithIcons(text: string) {
+  if (!text) return "";
+  // icon-tx
+  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1-tx.png)');
+  // icon ปกติ
+  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1.png)');
+  return text;
+}
+
+function preprocessImages(text: string): string {
+  if (!text) return "";
+  // [img:ชื่อ--] หรือ [img:ชื่อ.png--] → ให้ path มี -- ต่อท้าย เช่น /images/tmbub-encounter-position/xx.png--
+  return text.replace(/\[img:([a-zA-Z0-9_-]+)(\.png)?(--)?\]/g, (m, name, ext, full) => {
+    const file = name + (ext || '.png') + (full ? '--' : '');
+    return `![](/images/tmbub-encounter-position/${file})`;
+  });
+}
+
+// ===== 2. PREPROCESS COLOR TAG ([green]...[/green]) ให้เป็น HTML =====
 const colorMap: Record<string, string> = {
   red: '#d32f2f',
   green: '#26a641',
@@ -17,146 +37,32 @@ const colorMap: Record<string, string> = {
   yellow: '#fbc02d',
 };
 
-function preprocessWithIcons(text: string) {
+function replaceColorTags(text: string): string {
   if (!text) return "";
-  text = text.replace(/\[icon-tx:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1-tx.png)');
-  text = text.replace(/\[icon:([a-zA-Z0-9-]+)\]/g, '![](/icons/$1.png)');
-  return text;
-}
-
-function preprocessImages(text: string): string {
-  if (!text) return "";
-  return text.replace(/\[img:([a-zA-Z0-9_-]+)(\.png)?(--)?\]/g, (m, name, ext, full) => {
-    const file = name + (ext || '.png') + (full ? '--' : '');
-    return `![](/images/tmbub-encounter-position/${file})`;
+  return text.replace(/\[([a-zA-Z]+)\]([\s\S]*?)\[\/\1\]/g, (_m, color, content) => {
+    const cssColor = colorMap[color.toLowerCase()] || color;
+    return `<span style="color:${cssColor}">${content}</span>`;
   });
 }
 
+// ===== 3. PREPROCESS NOBREAK TAG ([nb]...[/nb]) ให้เป็น HTML =====
 function replaceNoBreakTags(text: string): string {
   if (!text) return "";
-  return text.replace(/\[nb\]([\s\S]*?)\[\/nb\]/g, (_m, content) => {
+  return text.replace(/<nb>([\s\S]*?)<\/nb>/g, (_m, content) => {
     return `<span style="white-space:nowrap">${content}</span>`;
   });
 }
 
-// ===== Smart Color Processor =====
-function smartColorProcessor(text: string): string {
-  if (!text) return "";
-  
-  return text.replace(/\[([a-zA-Z]+)\]([\s\S]*?)\[\/\1\]/g, (match, color, content) => {
-    const cssColor = colorMap[color.toLowerCase()] || color;
-    
-    // ประมวลผล markdown formatting ภายใน color tags
-    let processedContent = content;
-    
-    // จัดการ **bold** 
-    processedContent = processedContent.replace(/\*\*([^*]+)\*\*/g, (boldMatch, boldText) => {
-      return `**<span style="color:${cssColor}">${boldText}</span>**`;
-    });
-    
-    // จัดการ *italic* (ที่ไม่ใช่ส่วนของ **)
-    processedContent = processedContent.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, (italicMatch, italicText) => {
-      return `*<span style="color:${cssColor}">${italicText}</span>*`;
-    });
-    
-    // จัดการข้อความที่เหลือ (ไม่อยู่ใน * หรือ **)
-    processedContent = processedContent.replace(/([^*<>]+)(?![^<]*>)/g, (textMatch) => {
-      // ตรวจสอบว่าข้อความนี้ไม่อยู่ใน span tag แล้ว
-      if (textMatch.trim() && !textMatch.includes('<span')) {
-        return `<span style="color:${cssColor}">${textMatch}</span>`;
-      }
-      return textMatch;
-    });
-    
-    return processedContent;
-  });
-}
-
-// ===== Alternative: More Precise Parser =====
-function advancedColorProcessor(text: string): string {
-  if (!text) return "";
-  
-  return text.replace(/\[([a-zA-Z]+)\]([\s\S]*?)\[\/\1\]/g, (match, color, content) => {
-    const cssColor = colorMap[color.toLowerCase()] || color;
-    
-    // แยกเนื้อหาออกเป็นส่วนๆ ตาม markdown patterns
-    const parts: string[] = [];
-    let remaining = content;
-    let result = '';
-    
-    // Pattern สำหรับ **bold**, *italic*, และข้อความธรรมดา
-    const markdownPattern = /(\*\*[^*]+\*\*|\*[^*]+\*|[^*]+)/g;
-    
-    let partMatch;
-    while ((partMatch = markdownPattern.exec(remaining)) !== null) {
-      const part = partMatch[1];
-      
-      if (part.startsWith('**') && part.endsWith('**')) {
-        // Bold text
-        const boldText = part.slice(2, -2);
-        result += `**<span style="color:${cssColor}">${boldText}</span>**`;
-      } else if (part.startsWith('*') && part.endsWith('*')) {
-        // Italic text
-        const italicText = part.slice(1, -1);
-        result += `*<span style="color:${cssColor}">${italicText}</span>*`;
-      } else if (part.trim()) {
-        // Regular text
-        result += `<span style="color:${cssColor}">${part}</span>`;
-      } else {
-        // Whitespace
-        result += part;
-      }
-    }
-    
-    return result;
-  });
-}
-
-// ===== Regex-based Approach (Recommended) =====
-function regexColorProcessor(text: string): string {
-  if (!text) return "";
-  
-  return text.replace(/\[([a-zA-Z]+)\]([\s\S]*?)\[\/\1\]/g, (match, color, content) => {
-    const cssColor = colorMap[color.toLowerCase()] || color;
-    
-    // Step 1: Handle **bold** patterns
-    content = content.replace(/\*\*(.*?)\*\*/g, `**<span style="color:${cssColor}">$1</span>**`);
-    
-    // Step 2: Handle *italic* patterns (not part of **)
-    content = content.replace(/(?<!\*)\*([^*]*?)\*(?!\*)/g, `*<span style="color:${cssColor}">$1</span>*`);
-    
-    // Step 3: Handle remaining text (not wrapped in markdown or span)
-    content = content.replace(/(?![^<]*>)(?!\*\*?)([^*<]+?)(?!\*\*?)(?![^<]*<\/)/g, `<span style="color:${cssColor}">$1</span>`);
-    
-    return content;
-  });
-}
-
-// ===== Main Preprocessor =====
+// ===== 4. รวมทุก preprocess =====
 function preprocessAll(text: string): string {
-  if (!text) return "";
-  
-  // ทำ color processing ก่อน
-  let processedText = regexColorProcessor(text);
-  
-  // ทำ preprocessing อื่นๆ
-  processedText = replaceNoBreakTags(
-    preprocessImages(
-      preprocessWithIcons(processedText)
+  return replaceNoBreakTags(
+    replaceColorTags(
+      preprocessImages(
+        preprocessWithIcons(text)
+      )
     )
   );
-  
-  return processedText;
 }
-
-// ===== Test Examples =====
-/*
-Input: [red]*xxx* xyxyxy **yyyy**[/red]
-Expected Output: *<span style="color:#d32f2f">xxx</span>* <span style="color:#d32f2f">xyxyxy</span> **<span style="color:#d32f2f">yyyy</span>**
-
-Input: [blue]Normal **bold** *italic* text[/blue]  
-Expected Output: <span style="color:#1976d2">Normal</span> **<span style="color:#1976d2">bold</span>** *<span style="color:#1976d2">italic</span>* <span style="color:#1976d2">text</span>
-*/
 
 type MenuGroup = {
   code: string;
